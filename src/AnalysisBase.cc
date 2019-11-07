@@ -563,6 +563,11 @@ int AnalysisBase<SUSYNANOBase>::GetSampleIndex(){
       m_IndexToNevent[0]  = m_NeventTool.GetNevent_BKG(m_DataSet, m_FileTag);
       m_IndexToNweight[0] = m_NeventTool.GetNweight_BKG(m_DataSet, m_FileTag);
       m_Nsample++;
+      /*
+      cout << "m_Nsample: " << m_Nsample << " | " << "m_IndexToNweight: " << m_IndexToNweight[0] << endl;
+      cout << "m_DataSet: " << m_DataSet << endl;
+      cout << "m_FileTag: " << m_FileTag << endl; 
+      */
     }
     return 0;
   }
@@ -591,6 +596,8 @@ int AnalysisBase<SUSYNANOBase>::GetSampleIndex(){
     m_IndexToNevent[m_Nsample]  = m_NeventTool.GetNevent_SMS(m_DataSet, m_FileTag, MP, MC);
     m_IndexToNweight[m_Nsample] = m_NeventTool.GetNweight_SMS(m_DataSet, m_FileTag, MP, MC);
   
+    //cout << "m_Nsample: " << m_Nsample << " | " << "m_IndexToNweight: " << m_IndexToNweight[m_Nsample] << endl;  
+
     m_Nsample++;
   }
 
@@ -600,10 +607,15 @@ int AnalysisBase<SUSYNANOBase>::GetSampleIndex(){
 
 template <>
 double AnalysisBase<SUSYNANOBase>::GetEventWeight(){
-  if(m_IndexToNweight[m_SampleIndex] > 0.)
+  //cout << m_IndexToXsec[m_SampleIndex] << endl;
+  if(m_IndexToNweight[m_SampleIndex] > 0.){
+    //cout << "here" << endl;
     return genWeight*m_IndexToXsec[m_SampleIndex]/m_IndexToNweight[m_SampleIndex];
-  else
+  }
+  else{
+    //cout << "no" << endl;
     return 0.;
+  }
 }
 
 template <>
@@ -769,13 +781,13 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetElectrons(){
   int N = nElectron;
   for(int i = 0; i < N; i++){
     // baseline lepton definition
-    if(Electron_pt[i] < 5. || fabs(Electron_eta[i]) > 2.5)
-      continue;
-    if(fabs(Electron_dxy[i]) >= 0.05 || fabs(Electron_dz[i]) >= 0.1 ||
-       Electron_ip3d[i] >= 0.0175 || Electron_sip3d[i] >= 2.5)
-      continue;
-    if(Electron_pfRelIso03_all[i]*Electron_pt[i] >= 20. + 300./Electron_pt[i])
-      continue;
+    // if(Electron_pt[i] < 5. || fabs(Electron_eta[i]) > 2.5)
+    //   continue;
+    // if(fabs(Electron_dxy[i]) >= 0.05 || fabs(Electron_dz[i]) >= 0.1 ||
+    //    Electron_ip3d[i] >= 0.0175 || Electron_sip3d[i] >= 2.5)
+    //   continue;
+    // if(Electron_pfRelIso03_all[i]*Electron_pt[i] >= 20. + 300./Electron_pt[i])
+    //   continue;
 
     Particle lep;
     lep.SetPtEtaPhiM(Electron_pt[i], Electron_eta[i],
@@ -796,7 +808,14 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetElectrons(){
     // https://twiki.cern.ch/twiki/pub/CMS/SUSLeptonSF/Run2_SUSYwp_EleCB_MVA_8Jan19.pdf
     
     // FO baseline criteria
-    if(Electron_lostHits[i] == 0 && Electron_convVeto[i]){
+    /*if(Electron_lostHits[i] == 0 && Electron_convVeto[i] &&
+       Electron_pt[i] > 5. && fabs(Electron_eta[i]) < 2.5 &&
+       fabs(Electron_dxy[i]) < 0.05 && fabs(Electron_dz[i]) < 0.1 &&
+       Electron_ip3d[i] < 0.0175 && Electron_sip3d[i] < 2.5 &&
+       Electron_pfRelIso03_all[i]*Electron_pt[i] < 20. + 300./Electron_pt[i]){
+    */
+
+    if(Electron_pt[i] > 5. && fabs(Electron_eta[i]) < 2.5){
 
       double mva = Electron_mvaFall17V1noIso[i];
       if(year == 2016 || year == 2018)
@@ -816,35 +835,35 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetElectrons(){
 	if(fabs(lep.Eta()) < 0.8){ // eta < 0.8
 	  if(lep.Pt() < 10.){
 	    if(mva > -0.259)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > -0.388 + 0.109*(lep.Pt() - 25.))
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else {
 	    if(mva > -0.388)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  }
 	} else if(fabs(lep.Eta()) < 1.479){ // eta < 1.479
 	  if(lep.Pt() < 10.){
 	    if(mva > -0.256)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > -0.696 + 0.106*(lep.Pt() - 25.))
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else {
 	    if(mva > -0.696)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  }
 	} else { // eta < 2.5
 	  if(lep.Pt() < 10.){
 	    if(mva > -1.630)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > -1.219 + 0.148*(lep.Pt() - 25.))
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else {
 	    if(mva > -1.219)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  }
 	}
       }
@@ -853,35 +872,35 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetElectrons(){
 	if(fabs(lep.Eta()) < 0.8){ // eta < 0.8
 	  if(lep.Pt() < 10.){
 	    if(mva > -0.135)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > (-0.93 + (0.043/15.)*(lep.Pt()-10.)))
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else {
 	    if(mva > -0.887)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  }
 	} else if(fabs(lep.Eta()) < 1.479){ // eta < 1.479
 	  if(lep.Pt() < 10.){
 	    if(mva > -0.417)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > (-0.93 + (0.04/15.)*(lep.Pt()-10.)))
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else {
 	    if(mva > -0.89)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  }
 	} else { // eta < 2.5
 	  if(lep.Pt() < 10.){
 	    if(mva > -0.470)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > (-0.942 + (0.032/15.)*(lep.Pt()-10.)))
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else {
 	    if(mva > -0.91)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  }
 	}
       }
@@ -890,35 +909,35 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetElectrons(){
 	if(fabs(lep.Eta()) < 0.8){ // eta < 0.8
 	  if(lep.Pt() < 10.){
 	    if(mva > 0.053)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > -0.106 + 0.062*(lep.Pt() - 25.))
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else {
 	    if(mva > -0.106)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  }
 	} else if(fabs(lep.Eta()) < 1.479){ // eta < 1.479
 	  if(lep.Pt() < 10.){
 	    if(mva > -0.434)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > -0.769 + 0.038*(lep.Pt() - 25.))
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else {
 	    if(mva > -0.769)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  }
 	} else { // eta < 2.5
 	  if(lep.Pt() < 10.){
 	    if(mva > -0.956)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > -1.461 + 0.042*(lep.Pt() - 25.))
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  } else {
 	    if(mva > -1.461)
-	      lep.SetParticleID(kVeryLoose);
+	      lep.SetParticleID(kLoose);
 	  }
 	}
       }
@@ -928,35 +947,35 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetElectrons(){
 	if(fabs(lep.Eta()) < 0.8){ // eta < 0.8
 	  if(lep.Pt() < 10.){
 	    if(mva > 1.309)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > 0.887 + 0.088*(lep.Pt() - 25.))
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else {
 	    if(mva > 0.887)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  }
 	} else if(fabs(lep.Eta()) < 1.479){ // eta < 1.479
 	  if(lep.Pt() < 10.){
 	    if(mva > 0.373)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > 0.112 + 0.099*(lep.Pt() - 25.))
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else {
 	    if(mva > 0.112)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  }
 	} else { // eta < 2.5
 	  if(lep.Pt() < 10.){
 	    if(mva > 0.071)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > -0.017 + 0.137*(lep.Pt() - 25.))
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else {
 	    if(mva > -0.017)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  }
 	}
       }
@@ -965,35 +984,35 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetElectrons(){
 	if(fabs(lep.Eta()) < 0.8){ // eta < 0.8
 	  if(lep.Pt() < 10.){
 	    if(mva > 0.488)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > (-0.788 + (0.148/15.)*(lep.Pt()-10.)) )
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else {
 	    if(mva > -0.64)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  }
 	} else if(fabs(lep.Eta()) < 1.479){ // eta < 1.479
 	  if(lep.Pt() < 10.){
 	    if(mva > -0.045)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > (-0.85 + (0.075/15.)*(lep.Pt()-10.)))
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else {
 	    if(mva > -0.775)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  }
 	} else { // eta < 2.5
 	  if(lep.Pt() < 10.){
 	    if(mva > 0.176)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > (-0.81 + (0.077/15.)*(lep.Pt()-10.)))
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else {
 	    if(mva > -0.733)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  }
 	}
       }
@@ -1002,41 +1021,41 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetElectrons(){
 	if(fabs(lep.Eta()) < 0.8){ // eta < 0.8
 	  if(lep.Pt() < 10.){
 	    if(mva > 1.320)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > 1.204 + 0.066*(lep.Pt() - 25.))
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else {
 	    if(mva > 1.204)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  }
 	} else if(fabs(lep.Eta()) < 1.479){ // eta < 1.479
 	  if(lep.Pt() < 10.){
 	    if(mva > 0.192)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > 0.084 + 0.033*(lep.Pt() - 25.))
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else {
 	    if(mva > 0.084)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  }
 	} else { // eta < 2.5
 	  if(lep.Pt() < 10.){
 	    if(mva > 0.362)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else if(lep.Pt() < 25.) {
 	    if(mva > -0.123 + 0.053*(lep.Pt() - 25.))
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  } else {
 	    if(mva > -0.123)
-	      lep.SetParticleID(kLoose);
+	      lep.SetParticleID(kMedium);
 	  }
 	}
       }
 	    
       // signal lepton IDs (only Tight for now) baseline criteria
-      if(lep.IP3D() < 0.01 && lep.SIP3D() < 2.){
+      //if(lep.IP3D() < 0.01 && lep.SIP3D() < 2.){
 	// Tight electron
 	if(year == 2016){ // Summer16_94X legacy
 	  if(fabs(lep.Eta()) < 0.8){ // eta < 0.8
@@ -1073,86 +1092,85 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetElectrons(){
 		lep.SetParticleID(kTight);
 	    }
 	  }
-	}
-
-	if(year == 2017){ // Fall17_94X
-	  if(fabs(lep.Eta()) < 0.8){ // eta < 0.8
-	    if(lep.Pt() < 10.){ // using VLoose ID for low pT
-	      if(mva > 0.488)
-		lep.SetParticleID(kTight);
-	    } else if(lep.Pt() < 25.) {
-	      if(mva > 0.2+0.032*(lep.Pt() - 10.))
-		lep.SetParticleID(kTight);
-	    } else {
-	      if(mva > 0.68)
-		lep.SetParticleID(kTight);
-	    }
-	  } else if(fabs(lep.Eta()) < 1.479){ // eta < 1.479
-	    if(lep.Pt() < 10.){ // using VLoose ID for low pT
-	      if(mva > -0.045)
-		lep.SetParticleID(kTight);
-	    } else if(lep.Pt() < 25.) {
-	      if(mva > 0.1+0.025*(lep.Pt() - 10.))
-		lep.SetParticleID(kTight);
-	    } else {
-	      if(mva > 0.475)
-		lep.SetParticleID(kTight);
-	    }
-	  } else { // eta < 2.5
-	    if(lep.Pt() < 10.){ // using VLoose ID for low pT
-	      if(mva > 0.176)
-		lep.SetParticleID(kTight);
-	    } else if(lep.Pt() < 25.) {
-	      if(mva > -0.1+0.028*(lep.Pt() - 10.))
-		lep.SetParticleID(kTight);
-	    } else {
-	      if(mva > 0.32)
-		lep.SetParticleID(kTight);
-	    }
-	  }
-	}
-
-	if(year == 2018){ // Autumn18_102X
-	  if(fabs(lep.Eta()) < 0.8){ // eta < 0.8
-	    if(lep.Pt() < 10.){ // using VLoose ID for low pT
-	      if(mva > 1.320)
-		lep.SetParticleID(kTight);
-	    } else if(lep.Pt() < 25.) {
-	      if(mva > 4.277 + 0.112*(lep.Pt() - 25.))
-		lep.SetParticleID(kTight);
-	    } else {
-	      if(mva > 4.277)
-		lep.SetParticleID(kTight);
-	    }
-	  } else if(fabs(lep.Eta()) < 1.479){ // eta < 1.479
-	    if(lep.Pt() < 10.){ // using VLoose ID for low pT
-	      if(mva > 0.192)
-		lep.SetParticleID(kTight);
-	    } else if(lep.Pt() < 25.) {
-	      if(mva > 3.152 + 0.060*(lep.Pt() - 25.))
-		lep.SetParticleID(kTight);
-	    } else {
-	      if(mva > 3.152)
-		lep.SetParticleID(kTight);
-	    }
-	  } else { // eta < 2.5
-	    if(lep.Pt() < 10.){ // using VLoose ID for low pT
-	      if(mva > 0.362)
-		lep.SetParticleID(kTight);
-	    } else if(lep.Pt() < 25.) {
-	      if(mva > 2.359 + 0.087*(lep.Pt() - 25.))
-		lep.SetParticleID(kTight);
-	    } else {
-	      if(mva > 2.359)
-		lep.SetParticleID(kTight);
+	}	  
+	  
+	  if(year == 2017){ // Fall17_94X
+	    if(fabs(lep.Eta()) < 0.8){ // eta < 0.8
+	      if(lep.Pt() < 10.){ // using VLoose ID for low pT
+		if(mva > 0.488)
+		  lep.SetParticleID(kTight);
+	      } else if(lep.Pt() < 25.) {
+		if(mva > 0.2+0.032*(lep.Pt() - 10.))
+		  lep.SetParticleID(kTight);
+	      } else {
+		if(mva > 0.68)
+		  lep.SetParticleID(kTight);
+	      }
+	    } else if(fabs(lep.Eta()) < 1.479){ // eta < 1.479
+	      if(lep.Pt() < 10.){ // using VLoose ID for low pT
+		if(mva > -0.045)
+		  lep.SetParticleID(kTight);
+	      } else if(lep.Pt() < 25.) {
+		if(mva > 0.1+0.025*(lep.Pt() - 10.))
+		  lep.SetParticleID(kTight);
+	      } else {
+		if(mva > 0.475)
+		  lep.SetParticleID(kTight);
+	      }
+	    } else { // eta < 2.5
+	      if(lep.Pt() < 10.){ // using VLoose ID for low pT
+		if(mva > 0.176)
+		  lep.SetParticleID(kTight);
+	      } else if(lep.Pt() < 25.) {
+		if(mva > -0.1+0.028*(lep.Pt() - 10.))
+		  lep.SetParticleID(kTight);
+	      } else {
+		if(mva > 0.32)
+		  lep.SetParticleID(kTight);
+	      }
 	    }
 	  }
-	}
-	
+	  
+	  
+	  if(year == 2018){ // Autumn18_102X
+	    if(fabs(lep.Eta()) < 0.8){ // eta < 0.8
+	      if(lep.Pt() < 10.){ // using VLoose ID for low pT
+		if(mva > 1.320)
+		  lep.SetParticleID(kTight);
+	      } else if(lep.Pt() < 25.) {
+		if(mva > 4.277 + 0.112*(lep.Pt() - 25.))
+		  lep.SetParticleID(kTight);
+	      } else {
+		if(mva > 4.277)
+		  lep.SetParticleID(kTight);
+	      }
+	    } else if(fabs(lep.Eta()) < 1.479){ // eta < 1.479
+	      if(lep.Pt() < 10.){ // using VLoose ID for low pT
+		if(mva > 0.192)
+		  lep.SetParticleID(kTight);
+	      } else if(lep.Pt() < 25.) {
+		if(mva > 3.152 + 0.060*(lep.Pt() - 25.))
+		  lep.SetParticleID(kTight);
+	      } else {
+		if(mva > 3.152)
+		  lep.SetParticleID(kTight);
+	      }
+	    } else { // eta < 2.5
+	      if(lep.Pt() < 10.){ // using VLoose ID for low pT
+		if(mva > 0.362)
+		  lep.SetParticleID(kTight);
+	      } else if(lep.Pt() < 25.) {
+		if(mva > 2.359 + 0.087*(lep.Pt() - 25.))
+		  lep.SetParticleID(kTight);
+	      } else {
+		if(mva > 2.359)
+		  lep.SetParticleID(kTight);
+	      }
+	    }
+	    //}
+		  
       }
     } // end lepton id
-    
- 
 
     list.push_back(lep);
   }
@@ -1174,6 +1192,7 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetMuons(){
   int N = nMuon;
   for(int i = 0; i < N; i++){
      // baseline lepton definition
+    /*
     if(Muon_pt[i] < 3. || fabs(Muon_eta[i]) > 2.4)
       continue;
     if(fabs(Muon_dxy[i]) >= 0.05 || fabs(Muon_dz[i]) >= 0.1 ||
@@ -1181,7 +1200,7 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetMuons(){
       continue;
     if(Muon_pfRelIso03_all[i]*Muon_pt[i] >= 20. + 300./Muon_pt[i])
       continue;
-    
+    */
     Particle lep;
     lep.SetPtEtaPhiM(Muon_pt[i], Muon_eta[i],
 		     Muon_phi[i], std::max(float(0.),Muon_mass[i]));
@@ -1203,17 +1222,16 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetMuons(){
       lep.SetParticleID(kLoose);
 
       // signal lep criteria
-      if(lep.IP3D() < 0.01 && lep.SIP3D() < 2.){
-	if(Muon_tightId[i])
-	  lep.SetParticleID(kTight);
-	else if(lep.Pt() < 20.){
-	  if(Muon_softId[i])
-	    lep.SetParticleID(kMedium);
-	} else {
-	  if(Muon_mediumPromptId[i])
-	    lep.SetParticleID(kMedium);
-	}
-      }
+      //if(lep.IP3D() < 0.01 && lep.SIP3D() < 2.){
+      if(Muon_tightId[i])
+	lep.SetParticleID(kTight);
+      else if(lep.Pt() < 20.){
+	if(Muon_softId[i])
+	  lep.SetParticleID(kMedium);
+      } else {
+	if(Muon_mediumPromptId[i])
+	  lep.SetParticleID(kMedium);
+      } 
     }
 
     list.push_back(lep);
@@ -1271,9 +1289,22 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetGenElectrons(){
       Particle lep;
       
       lep.SetPDGID(PDGID);
+
       int mom = GenPart_genPartIdxMother[i];
+      int momid = 0;
       if(mom >= 0 && mom < N)
-	lep.SetMomPDGID(GenPart_pdgId[mom]);
+	momid = GenPart_pdgId[mom];
+
+      while(abs(momid) == 11){
+	mom = GenPart_genPartIdxMother[mom];
+	if(mom >= 0 && mom < N)
+	  momid = GenPart_pdgId[mom];
+	else
+	  break;
+      }
+
+      lep.SetMomPDGID(GenPart_pdgId[mom]);
+
       lep.SetCharge( (PDGID > 0 ? -1 : 1) );
       lep.SetPtEtaPhiM(GenPart_pt[i], GenPart_eta[i],
 		       GenPart_phi[i], max(float(0.),GenPart_mass[i]));
@@ -1298,8 +1329,20 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetGenMuons(){
       
       lep.SetPDGID(PDGID);
       int mom = GenPart_genPartIdxMother[i];
+      int momid = 0;
       if(mom >= 0 && mom < N)
-	lep.SetMomPDGID(GenPart_pdgId[mom]);
+	momid = GenPart_pdgId[mom];
+
+      while(abs(momid) == 13){
+        mom = GenPart_genPartIdxMother[mom];
+        if(mom >= 0 && mom < N)
+          momid = GenPart_pdgId[mom];
+        else
+          break;
+      }
+
+      lep.SetMomPDGID(GenPart_pdgId[mom]);
+
       lep.SetCharge( (PDGID > 0 ? -1 : 1) );
       lep.SetPtEtaPhiM(GenPart_pt[i], GenPart_eta[i],
 		       GenPart_phi[i], max(float(0.),GenPart_mass[i]));
