@@ -1,6 +1,7 @@
 #include <stdio.h>  
 #include <unistd.h>
 #include <iostream>
+#include <fstream>
 #include <vector>
 
 #include <TH1F.h>
@@ -30,12 +31,13 @@ TGraphAsymmErrors* RocFromEff(TEfficiency* eff, TEfficiency* fakes, int nbins);
 
 int main(int argc, char *argv[]){
 
-  int opt; 
+  int opt;
   char* filename;
+  char* txtfile;
   char* samplename;
 
   //Command line option definitions  
-  while((opt = getopt(argc, argv, "i:s:h")) != -1){
+  while((opt = getopt(argc, argv, "i:s:f:h")) != -1){
     switch(opt)  
       {
 	//Input filename option [-i]
@@ -47,6 +49,10 @@ int main(int argc, char *argv[]){
       case 's':
         samplename = optarg;
         break;
+
+      case 'f':
+	txtfile = optarg;
+	break;
 
 	//input Help option [-h]    
       case 'h':
@@ -147,6 +153,8 @@ int main(int argc, char *argv[]){
   TH1F *num_lostHits = new TH1F("num_lostHits","num_lostHits",nbins,xmin,xmax);
   TH1F *num_ip3D = new TH1F("num_ip3D","num_ip3D",nbins,xmin,xmax);
   TH1F *num_sip3D = new TH1F("num_sip3D","num_sip3D",nbins,xmin,xmax);
+  TH1F *num_sip3D_4 = new TH1F("num_sip3D_4","num_sip3D_4",nbins,xmin,xmax);
+  TH1F *num_sip3D_8 = new TH1F("num_sip3D_8","num_sip3D_8",nbins,xmin,xmax);
   TH1F *num_convVeto = new TH1F("num_convVeto","num_convVeto",nbins,xmin,xmax);
   TH1F *num_dxy = new TH1F("num_dxy","num_dxy",nbins,xmin,xmax);
   TH1F *num_dz = new TH1F("num_dz","num_dz",nbins,xmin,xmax);
@@ -155,6 +163,8 @@ int main(int argc, char *argv[]){
   TH1F *num_lostHits_f = new TH1F("num_lostHits_f","num_lostHits_f",nbins,xmin,xmax);
   TH1F *num_ip3D_f = new TH1F("num_ip3D_f","num_ip3D_f",nbins,xmin,xmax);
   TH1F *num_sip3D_f = new TH1F("num_sip3D_f","num_sip3D_f",nbins,xmin,xmax);
+  TH1F *num_sip3D_f_4 = new TH1F("num_sip3D_f_4","num_sip3D_f_4",nbins,xmin,xmax);
+  TH1F *num_sip3D_f_8 = new TH1F("num_sip3D_f_8","num_sip3D_f_8",nbins,xmin,xmax);
   TH1F *num_convVeto_f = new TH1F("num_convVeto_f","num_convVeto_f",nbins,xmin,xmax);
   TH1F *num_dxy_f = new TH1F("num_dxy_f","num_dxy_f",nbins,xmin,xmax);
   TH1F *num_dz_f = new TH1F("num_dz_f","num_dz_f",nbins,xmin,xmax);
@@ -190,12 +200,16 @@ int main(int argc, char *argv[]){
   //Muon candidate selection parameter efficiency histograms
   TH1F *num_ip3D_mu = new TH1F("num_ip3D_mu","num_ip3D_mu",nbins,xmin,xmax);
   TH1F *num_sip3D_mu = new TH1F("num_sip3D_mu","num_sip3D_mu",nbins,xmin,xmax);
+  TH1F *num_sip3D_mu_4 = new TH1F("num_sip3D_mu_4","num_sip3D_mu_4",nbins,xmin,xmax);
+  TH1F *num_sip3D_mu_8 = new TH1F("num_sip3D_mu_8","num_sip3D_mu_8",nbins,xmin,xmax);
   TH1F *num_dxy_mu = new TH1F("num_dxy_mu","num_dxy_mu",nbins,xmin,xmax);
   TH1F *num_dz_mu = new TH1F("num_dz_mu","num_dz_mu",nbins,xmin,xmax);
 
   //Muon candidate selection parameter fakerate histograms
   TH1F *num_ip3D_fr_mu = new TH1F("num_ip3D_fr_mu","num_ip3D_fr_mu",nbins,xmin,xmax);
   TH1F *num_sip3D_fr_mu = new TH1F("num_sip3D_fr_mu","num_sip3D_fr_mu",nbins,xmin,xmax);
+  TH1F *num_sip3D_fr_mu_4 = new TH1F("num_sip3D_fr_mu_4","num_sip3D_fr_mu_4",nbins,xmin,xmax);
+  TH1F *num_sip3D_fr_mu_8 = new TH1F("num_sip3D_fr_mu_8","num_sip3D_fr_mu_8",nbins,xmin,xmax);
   TH1F *num_dxy_fr_mu = new TH1F("num_dxy_fr_mu","num_dxy_fr_mu",nbins,xmin,xmax);
   TH1F *num_dz_fr_mu = new TH1F("num_dz_fr_mu","num_dz_fr_mu",nbins,xmin,xmax);
 
@@ -223,9 +237,26 @@ int main(int argc, char *argv[]){
   TH1F *den_medPrompt_mu = new TH1F("den_medPrompt_mu","den_medPrompt_mu",nbins,xmin,xmax);
   TH1F *den_medPrompt_fake_mu = new TH1F("den_medPrompt_fake_mu","den_medPrompt_fake_mu",nbins,xmin,xmax);
 
+  //Denominator isolation cut fake leptons
+  TH1F *den_iso4_fake_mu = new TH1F("den_iso4_fake_mu","den_iso4_fake_mu",nbins,xmin,xmax);
 
+  //Numerator isolation cut fake leptons
+  TH1F *num_mp_iso4_fr_mu = new TH1F("num_mp_iso4_fr_mu","num_mp_iso4_fr_mu",nbins,xmin,xmax);
+  TH1F *num_m_iso4_fr_mu = new TH1F("num_m_iso4_fr_mu","num_m_iso4_fr_mu",nbins,xmin,xmax);
+  TH1F *num_t_iso4_fr_mu = new TH1F("num_t_iso4_fr_mu","num_t_iso4_fr_mu",nbins,xmin,xmax);
+  TH1F *num_sid_iso4_fr_mu = new TH1F("num_sid_iso4_fr_mu","num_sid_iso4_fr_mu",nbins,xmin,xmax);
+  TH1F *num_smva_iso4_fr_mu = new TH1F("num_smva_iso4_fr_mu","num_smva_iso4_fr_mu",nbins,xmin,xmax);
+
+  string line;
   TChain *tch = new TChain("KUAnalysis");
-  tch->Add(filename);
+
+  ifstream file (txtfile);
+  if (file.is_open()){
+    while (!file.eof()){
+      getline(file,line);
+      tch->Add(TString(line));
+    }
+  }
 
   KUAnalysis *ku = new KUAnalysis(tch);
 
@@ -359,6 +390,10 @@ int main(int argc, char *argv[]){
 	    num_ip3D->Fill(pt,weight);
 	  if(ku->Electron_sip3d->at(idx) < sip3D)
 	    num_sip3D->Fill(pt,weight);
+	  if(ku->Electron_sip3d->at(idx) < 4.0)
+            num_sip3D_4->Fill(pt,weight);
+	  if(ku->Electron_sip3d->at(idx) < 8.0)
+            num_sip3D_8->Fill(pt,weight);
 	  if(ku->Electron_convVeto->at(idx))
 	    num_convVeto->Fill(pt,weight);
 	  if(fabs(ku->Electron_dxy->at(idx)) < dxy)
@@ -367,6 +402,7 @@ int main(int argc, char *argv[]){
 	    num_dz->Fill(pt,weight);
 	}
 
+	//Tight electron denominator
 	if(ku->ID_ele->at(idx) >= 4){
 	  den_tight_ele->Fill(pt,weight);
 	  if(miniIso < 0.1)
@@ -429,6 +465,10 @@ int main(int argc, char *argv[]){
             num_ip3D_mu->Fill(pt,weight);
           if(ku->Muon_sip3d->at(idx) < sip3D)
             num_sip3D_mu->Fill(pt,weight);
+	  if(ku->Muon_sip3d->at(idx) < 4.0)
+            num_sip3D_mu_4->Fill(pt,weight);
+	  if(ku->Muon_sip3d->at(idx) < 8.0)
+            num_sip3D_mu_8->Fill(pt,weight);
           if(fabs(ku->Muon_dxy->at(idx)) < dxy)
             num_dxy_mu->Fill(pt,weight);
           if(fabs(ku->Muon_dz->at(idx)) < dz)
@@ -469,6 +509,10 @@ int main(int argc, char *argv[]){
 	    num_ip3D_f->Fill(pt,weight);
 	  if(ku->Electron_sip3d->at(i) < sip3D)
 	    num_sip3D_f->Fill(pt,weight);
+	  if(ku->Electron_sip3d->at(i) < 4.0)
+            num_sip3D_f_4->Fill(pt,weight);
+	  if(ku->Electron_sip3d->at(i) < 8.0)
+            num_sip3D_f_8->Fill(pt,weight);
 	  if(ku->Electron_convVeto->at(i))
 	    num_convVeto_f->Fill(pt,weight);
 	  if(fabs(ku->Electron_dxy->at(i)) < dxy)
@@ -544,6 +588,10 @@ int main(int argc, char *argv[]){
             num_ip3D_fr_mu->Fill(pt,weight);
           if(ku->Muon_sip3d->at(i) < sip3D)
             num_sip3D_fr_mu->Fill(pt,weight);
+	  if(ku->Muon_sip3d->at(i) < 4.0)
+            num_sip3D_fr_mu_4->Fill(pt,weight);
+	  if(ku->Muon_sip3d->at(i) < 8.0)
+            num_sip3D_fr_mu_8->Fill(pt,weight);
           if(fabs(ku->Muon_dxy->at(i)) < dxy)
             num_dxy_fr_mu->Fill(pt,weight);
           if(fabs(ku->Muon_dz->at(i)) < dz)
@@ -560,6 +608,20 @@ int main(int argc, char *argv[]){
           if(miniIso*pt < 6.)
             num_SUSY_medPrompt_mu_iso6_fr->Fill(pt,weight);
         }
+
+	if(miniIso*pt < 4.){
+	  den_iso4_fake_mu->Fill(pt,weight);
+	  if(ku->Muon_mediumId->at(i))
+            num_m_iso4_fr_mu->Fill(pt,weight);
+          if(ku->Muon_mediumPromptId->at(i))
+            num_mp_iso4_fr_mu->Fill(pt,weight);
+          if(ku->Muon_tightId->at(i))
+            num_t_iso4_fr_mu->Fill(pt,weight);
+          if(ku->Muon_softId->at(i))
+            num_sid_iso4_fr_mu->Fill(pt,weight);
+          if(ku->Muon_softMvaId->at(i))
+            num_smva_iso4_fr_mu->Fill(pt,weight);
+	}
 
       }
     }
@@ -703,6 +765,24 @@ int main(int argc, char *argv[]){
 
   PlotEff(fr_wp_mu, label_wp_mu, "fr_wp_mu", mu_label, ylabel_fr, samplename, true);
 
+  //Fakerate isolated muons (pt*miniIso < 4.0)
+  vector<TEfficiency*> fr_iso4_wp_mu;
+  vector<TString> label_iso4_wp_fr_mu;
+
+  TEfficiency *fr_iso4_m_mu = new TEfficiency(*num_m_iso4_fr_mu,*den_iso4_fake_mu);
+  TEfficiency *fr_iso4_mp_mu = new TEfficiency(*num_mp_iso4_fr_mu,*den_iso4_fake_mu);
+  TEfficiency *fr_iso4_t_mu = new TEfficiency(*num_t_iso4_fr_mu,*den_iso4_fake_mu);
+  TEfficiency *fr_iso4_sid_mu = new TEfficiency(*num_sid_iso4_fr_mu,*den_iso4_fake_mu);
+  TEfficiency *fr_iso4_smva_mu = new TEfficiency(*num_smva_iso4_fr_mu,*den_iso4_fake_mu);
+
+  fr_iso4_wp_mu.push_back(fr_iso4_m_mu);label_iso4_wp_fr_mu.push_back("medium");
+  fr_iso4_wp_mu.push_back(fr_iso4_mp_mu);label_iso4_wp_fr_mu.push_back("medium prompt");
+  fr_iso4_wp_mu.push_back(fr_iso4_t_mu);label_iso4_wp_fr_mu.push_back("tight");
+  fr_iso4_wp_mu.push_back(fr_iso4_sid_mu);label_iso4_wp_fr_mu.push_back("soft ID");
+  fr_iso4_wp_mu.push_back(fr_iso4_smva_mu);label_iso4_wp_fr_mu.push_back("soft MVA ID");
+
+  PlotEff(fr_iso4_wp_mu, label_iso4_wp_fr_mu, "fr_iso4_wp_fr_mu", mu_label, ylabel_fr, samplename, true);
+
   //electron candidate selection efficiencies and fakerates
   vector<TEfficiency*> eff_sel;
   vector<TEfficiency*> fake_sel;
@@ -711,30 +791,38 @@ int main(int argc, char *argv[]){
   TEfficiency *eff_lostHits = new TEfficiency(*num_lostHits,*den_all_ele);
   TEfficiency *eff_ip3D = new TEfficiency(*num_ip3D,*den_all_ele);
   TEfficiency *eff_sip3D = new TEfficiency(*num_sip3D,*den_all_ele);
+  TEfficiency *eff_sip3D_4 = new TEfficiency(*num_sip3D_4,*den_all_ele);
+  TEfficiency *eff_sip3D_8 = new TEfficiency(*num_sip3D_8,*den_all_ele);
   TEfficiency *eff_convVeto = new TEfficiency(*num_convVeto,*den_all_ele);
   TEfficiency *eff_dxy = new TEfficiency(*num_dxy,*den_all_ele);
   TEfficiency *eff_dz = new TEfficiency(*num_dz,*den_all_ele);
 
-  eff_sel.push_back(eff_lostHits); label_sel.push_back(Form("pass lostHits"));
   eff_sel.push_back(eff_ip3D); label_sel.push_back(Form("ip3D < %.4f",ip3D));
   eff_sel.push_back(eff_sip3D); label_sel.push_back(Form("sip3D < %.1f",sip3D));
-  eff_sel.push_back(eff_convVeto); label_sel.push_back("pass convVeto");
+  eff_sel.push_back(eff_sip3D_4); label_sel.push_back("sip3D < 4.0");
+  eff_sel.push_back(eff_sip3D_8); label_sel.push_back("sip3D < 8.0");
   eff_sel.push_back(eff_dxy); label_sel.push_back(Form("dxy < %.2f",dxy));
   eff_sel.push_back(eff_dz); label_sel.push_back(Form("dz < %.2f",dz));
+  eff_sel.push_back(eff_lostHits); label_sel.push_back(Form("pass lostHits"));
+  eff_sel.push_back(eff_convVeto); label_sel.push_back("pass convVeto");
 
   TEfficiency *fake_lostHits = new TEfficiency(*num_lostHits_f,*den_fake_ele);
   TEfficiency *fake_ip3D = new TEfficiency(*num_ip3D_f,*den_fake_ele);
   TEfficiency *fake_sip3D = new TEfficiency(*num_sip3D_f,*den_fake_ele);
+  TEfficiency *fake_sip3D_4 = new TEfficiency(*num_sip3D_f_4,*den_fake_ele);
+  TEfficiency *fake_sip3D_8 = new TEfficiency(*num_sip3D_f_8,*den_fake_ele);
   TEfficiency *fake_convVeto = new TEfficiency(*num_convVeto_f,*den_fake_ele);
   TEfficiency *fake_dxy = new TEfficiency(*num_dxy_f,*den_fake_ele);
   TEfficiency *fake_dz = new TEfficiency(*num_dz_f,*den_fake_ele);
 
-  fake_sel.push_back(fake_lostHits);
   fake_sel.push_back(fake_ip3D);
   fake_sel.push_back(fake_sip3D);
-  fake_sel.push_back(fake_convVeto);
+  fake_sel.push_back(fake_sip3D_4);
+  fake_sel.push_back(fake_sip3D_8);
   fake_sel.push_back(fake_dxy);
   fake_sel.push_back(fake_dz);
+  fake_sel.push_back(fake_lostHits);
+  fake_sel.push_back(fake_convVeto);
 
   PlotEff(eff_sel,label_sel,"eff_sel", ele_label,ylabel_eff, samplename, true);
   PlotEff(fake_sel,label_sel,"fake_sel", ele_label,ylabel_fr, samplename, true);
@@ -746,21 +834,29 @@ int main(int argc, char *argv[]){
 
   TEfficiency *eff_ip3D_mu  = new TEfficiency(*num_ip3D_mu,*den_all_mu);
   TEfficiency *eff_sip3D_mu = new TEfficiency(*num_sip3D_mu,*den_all_mu);
+  TEfficiency *eff_sip3D_mu_4 = new TEfficiency(*num_sip3D_mu_4,*den_all_mu);
+  TEfficiency *eff_sip3D_mu_8 = new TEfficiency(*num_sip3D_mu_8,*den_all_mu);
   TEfficiency *eff_dxy_mu   = new TEfficiency(*num_dxy_mu,*den_all_mu);
   TEfficiency *eff_dz_mu    = new TEfficiency(*num_dz_mu,*den_all_mu);
 
   eff_sel_mu.push_back(eff_ip3D_mu); label_sel_mu.push_back(Form("ip3D < %.4f",ip3D));
   eff_sel_mu.push_back(eff_sip3D_mu); label_sel_mu.push_back(Form("sip3D < %.1f",sip3D));
+  eff_sel_mu.push_back(eff_sip3D_mu_4); label_sel_mu.push_back("sip3D < 4.0");
+  eff_sel_mu.push_back(eff_sip3D_mu_8); label_sel_mu.push_back("sip3D < 8.0");
   eff_sel_mu.push_back(eff_dxy_mu); label_sel_mu.push_back(Form("dxy < %.2f",dxy));
   eff_sel_mu.push_back(eff_dz_mu); label_sel_mu.push_back(Form("dz < %.2f",dz));
 
   TEfficiency *fake_ip3D_mu  = new TEfficiency(*num_ip3D_fr_mu,*den_fake_mu);
   TEfficiency *fake_sip3D_mu = new TEfficiency(*num_sip3D_fr_mu,*den_fake_mu);
+  TEfficiency *fake_sip3D_mu_4 = new TEfficiency(*num_sip3D_fr_mu_4,*den_fake_mu);
+  TEfficiency *fake_sip3D_mu_8 = new TEfficiency(*num_sip3D_fr_mu_8,*den_fake_mu);
   TEfficiency *fake_dxy_mu   = new TEfficiency(*num_dxy_fr_mu,*den_fake_mu);
   TEfficiency *fake_dz_mu    = new TEfficiency(*num_dz_fr_mu,*den_fake_mu);
 
   fake_sel_mu.push_back(fake_ip3D_mu);
   fake_sel_mu.push_back(fake_sip3D_mu);
+  fake_sel_mu.push_back(fake_sip3D_mu_4);
+  fake_sel_mu.push_back(fake_sip3D_mu_8);
   fake_sel_mu.push_back(fake_dxy_mu);
   fake_sel_mu.push_back(fake_dz_mu);
 
@@ -801,7 +897,7 @@ int main(int argc, char *argv[]){
   TEfficiency *eff_tight_ele_iso4  = new TEfficiency(*num_SUSY_tight_ele_iso4,*den_tight_ele);
   TEfficiency *eff_tight_ele_iso6  = new TEfficiency(*num_SUSY_tight_ele_iso6,*den_tight_ele);
 
-  eff_tight_ele_iso.push_back(eff_t_ele); label_tight_ele_iso.push_back("tight (no iso)");
+  //eff_tight_ele_iso.push_back(eff_t_ele); label_tight_ele_iso.push_back("tight (no iso)");
   eff_tight_ele_iso.push_back(eff_tight_ele_iso0p1); label_tight_ele_iso.push_back("miniIso < 0.1");
   eff_tight_ele_iso.push_back(eff_tight_ele_iso0p2); label_tight_ele_iso.push_back("miniIso < 0.2");
   eff_tight_ele_iso.push_back(eff_tight_ele_iso4); label_tight_ele_iso.push_back("miniIso #upoint p_{T} < 4");
@@ -817,7 +913,7 @@ int main(int argc, char *argv[]){
   TEfficiency *fr_tight_ele_iso4  = new TEfficiency(*num_SUSY_tight_ele_iso4_fr,*den_tight_fake_ele);
   TEfficiency *fr_tight_ele_iso6  = new TEfficiency(*num_SUSY_tight_ele_iso6_fr,*den_tight_fake_ele);
 
-  fr_tight_ele_iso.push_back(fr_t_ele);
+  //fr_tight_ele_iso.push_back(fr_t_ele);
   fr_tight_ele_iso.push_back(fr_tight_ele_iso0p1); 
   fr_tight_ele_iso.push_back(fr_tight_ele_iso0p2); 
   fr_tight_ele_iso.push_back(fr_tight_ele_iso4); 
@@ -834,7 +930,7 @@ int main(int argc, char *argv[]){
   TEfficiency *eff_medPrompt_mu_iso4  = new TEfficiency(*num_SUSY_medPrompt_mu_iso4,*den_medPrompt_mu);
   TEfficiency *eff_medPrompt_mu_iso6  = new TEfficiency(*num_SUSY_medPrompt_mu_iso6,*den_medPrompt_mu);
 
-  eff_medPrompt_mu_iso.push_back(eff_mp_mu); label_medPrompt_mu_iso.push_back("medium prompt (no iso)");
+  //eff_medPrompt_mu_iso.push_back(eff_mp_mu); label_medPrompt_mu_iso.push_back("medium prompt (no iso)");
   eff_medPrompt_mu_iso.push_back(eff_medPrompt_mu_iso0p1); label_medPrompt_mu_iso.push_back("miniIso < 0.1");
   eff_medPrompt_mu_iso.push_back(eff_medPrompt_mu_iso0p2); label_medPrompt_mu_iso.push_back("miniIso < 0.2");
   eff_medPrompt_mu_iso.push_back(eff_medPrompt_mu_iso4); label_medPrompt_mu_iso.push_back("miniIso #upoint p_{T} < 4");
@@ -850,7 +946,7 @@ int main(int argc, char *argv[]){
   TEfficiency *fr_medPrompt_mu_iso4  = new TEfficiency(*num_SUSY_medPrompt_mu_iso4_fr,*den_medPrompt_fake_mu);
   TEfficiency *fr_medPrompt_mu_iso6  = new TEfficiency(*num_SUSY_medPrompt_mu_iso6_fr,*den_medPrompt_fake_mu);
 
-  fr_medPrompt_mu_iso.push_back(fr_mp_mu); 
+  //fr_medPrompt_mu_iso.push_back(fr_mp_mu); 
   fr_medPrompt_mu_iso.push_back(fr_medPrompt_mu_iso0p1); 
   fr_medPrompt_mu_iso.push_back(fr_medPrompt_mu_iso0p2); 
   fr_medPrompt_mu_iso.push_back(fr_medPrompt_mu_iso4); 
@@ -862,15 +958,15 @@ int main(int argc, char *argv[]){
   Plot1D(dR_ele,"deltaR_ele",samplename);
   Plot1D(dR_mu, "deltaR_mu",samplename);
 
-  Plot2D(miniIsoVsPt_sig,"miniIsoVsPt_sig",ele_label,"MiniIso",samplename);
-  Plot2D(miniIsoPtVsPt_sig,"miniIsoPtVsPt_sig",ele_label,"MiniIso #upoint p_{T}",samplename);
-  Plot2D(miniIsoVsPt_fake,"miniIsoVsPt_fake",ele_label,"MiniIso",samplename);
-  Plot2D(miniIsoPtVsPt_fake,"miniIsoPtVsPt_fake",ele_label,"MiniIso #upoint p_{T}",samplename);
+  Plot2D(miniIsoVsPt_sig,"miniIsoVsPt_sig_ele",ele_label,"MiniIso",samplename);
+  Plot2D(miniIsoPtVsPt_sig,"miniIsoPtVsPt_sig_ele",ele_label,"MiniIso #upoint p_{T}",samplename);
+  Plot2D(miniIsoVsPt_fake,"miniIsoVsPt_fake_ele",ele_label,"MiniIso",samplename);
+  Plot2D(miniIsoPtVsPt_fake,"miniIsoPtVsPt_fake_ele",ele_label,"MiniIso #upoint p_{T}",samplename);
 
-  Plot2D(miniIsoVsPt_mu_sig,"miniIsoVsPt_sig",mu_label,"MiniIso",samplename);
-  Plot2D(miniIsoPtVsPt_mu_sig,"miniIsoPtVsPt_sig",mu_label,"MiniIso #upoint p_{T}",samplename);
-  Plot2D(miniIsoVsPt_mu_fake,"miniIsoVsPt_fake",mu_label,"MiniIso",samplename);
-  Plot2D(miniIsoPtVsPt_mu_fake,"miniIsoPtVsPt_fake",mu_label,"MiniIso #upoint p_{T}",samplename);
+  Plot2D(miniIsoVsPt_mu_sig,"miniIsoVsPt_sig_mu",mu_label,"MiniIso",samplename);
+  Plot2D(miniIsoPtVsPt_mu_sig,"miniIsoPtVsPt_sig_mu",mu_label,"MiniIso #upoint p_{T}",samplename);
+  Plot2D(miniIsoVsPt_mu_fake,"miniIsoVsPt_fake_mu",mu_label,"MiniIso",samplename);
+  Plot2D(miniIsoPtVsPt_mu_fake,"miniIsoPtVsPt_fake_mu",mu_label,"MiniIso #upoint p_{T}",samplename);
 
   RocCurve(eff_sel, fake_sel, label_sel, nbins, "ROC_sel",samplename);
   RocCurve(eff_wp_ele, fr_wp_ele, label_wp_ele, nbins, "ROC_SUSY_wp_ele", samplename);

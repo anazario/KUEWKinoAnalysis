@@ -17,7 +17,7 @@ TREE = "Events"
 OUT = pwd
 LIST = "default.list"
 QUEUE = ""
-MAXN = 20
+MAXN = 1
 
 def new_listfile(rootlist, listfile):
     mylist = open(listfile,'w')
@@ -142,7 +142,7 @@ if __name__ == "__main__":
 
     datasetlist = []
 
-    knowntags = ["Fall17_94X","Autumn18_102X","Summer16_94X"]
+    knowntags = ["Fall17_102X","Autumn18_102X","Summer16_102X","Summer16_94X","Fall17_94X"]
     
     with open(listfile,'r') as mylist:
         inputlist = mylist.readlines()
