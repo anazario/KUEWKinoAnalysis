@@ -1,18 +1,19 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Sat Oct  5 16:32:44 2019 by ROOT version 6.12/07
+// Sun Dec  8 15:33:37 2019 by ROOT version 6.14/09
 // from TTree KUAnalysis/KUAnalysis
-// found on file: root/DY_HT-400To600_Fall17.root
+// found on file: test.root
 //////////////////////////////////////////////////////////
 
 #ifndef KUAnalysis_h
 #define KUAnalysis_h
 
-#include <vector>
-
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
+
+// Header file for the classes stored in the TTree if any.
+#include <vector>
 
 using namespace std;
 
@@ -25,6 +26,7 @@ public :
 
    // Declaration of leaf types
    Double_t        weight;
+   Double_t        MET_pt;
    Int_t           Nele;
    vector<double>  *PT_ele;
    vector<double>  *Eta_ele;
@@ -165,6 +167,7 @@ public :
 
    // List of branches
    TBranch        *b_weight;   //!
+   TBranch        *b_MET_pt;   //!
    TBranch        *b_Nele;   //!
    TBranch        *b_PT_ele;   //!
    TBranch        *b_Eta_ele;   //!
@@ -311,14 +314,15 @@ public :
 
 #endif
 
+
 KUAnalysis::KUAnalysis(TTree *tree) : fChain(0) 
 {
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("root/DY_HT-400To600_Fall17.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("test.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("root/DY_HT-400To600_Fall17.root");
+         f = new TFile("test.root");
       }
       f->GetObject("KUAnalysis",tree);
 
@@ -332,7 +336,7 @@ KUAnalysis::~KUAnalysis()
    delete fChain->GetCurrentFile();
 }
 
-void KUAnalysis::Init(TTree *tree)
+inline void KUAnalysis::Init(TTree *tree)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -483,6 +487,7 @@ void KUAnalysis::Init(TTree *tree)
    fChain->SetMakeClass(1);
 
    fChain->SetBranchAddress("weight", &weight, &b_weight);
+   fChain->SetBranchAddress("MET_pt", &MET_pt, &b_MET_pt);
    fChain->SetBranchAddress("Nele", &Nele, &b_Nele);
    fChain->SetBranchAddress("PT_ele", &PT_ele, &b_PT_ele);
    fChain->SetBranchAddress("Eta_ele", &Eta_ele, &b_Eta_ele);
@@ -623,6 +628,7 @@ void KUAnalysis::Init(TTree *tree)
 
    fChain->SetBranchStatus("*",0);
    fChain->SetBranchStatus("weight",1);
+   fChain->SetBranchStatus("MET_pt",1);
    fChain->SetBranchStatus("Nele",1);
    fChain->SetBranchStatus("PT_ele",1);
    fChain->SetBranchStatus("Eta_ele",1);

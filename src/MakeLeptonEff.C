@@ -20,7 +20,7 @@
 
 using namespace std;
 
-void PlotEff(vector<TEfficiency*> vec_eff, vector<TString> vec_names, TString name, TString xlabel, TString ylabel, TString sample, bool isEff);
+void PlotEff(vector<TEfficiency*> vec_eff, vector<TString> vec_names, TString name, TString xlabel, TString ylabel, TString sample, bool isEff, float ymax = 1.05, float ymin = 0.);
 void Plot1D(TH1F* h1, TString name, TString sample);
 void Plot2D(TH2F* h2, TString name, TString xlabel, TString ylabel, TString sample);
 void RocCurve(vector<TEfficiency*> eff, vector<TEfficiency*> fakes, vector<TString> vec_names, int nbins, TString name, TString sample);
@@ -36,8 +36,10 @@ int main(int argc, char *argv[]){
   char* txtfile;
   char* samplename;
 
+  bool test = false;
+
   //Command line option definitions  
-  while((opt = getopt(argc, argv, "i:s:f:h")) != -1){
+  while((opt = getopt(argc, argv, "i:s:f:th")) != -1){
     switch(opt)  
       {
 	//Input filename option [-i]
@@ -54,9 +56,13 @@ int main(int argc, char *argv[]){
 	txtfile = optarg;
 	break;
 
+      case 't':
+	test = true;
+	break;
+
 	//input Help option [-h]    
       case 'h':
-	printf("Usage: %s [-i] inputfile\n", argv[0]);
+	printf("Usage: %s [-f] inputList.txt [-s] sampleName\n", argv[0]);
 	return 0;
 	
 	//If unknown option is given, return error
@@ -81,7 +87,7 @@ int main(int argc, char *argv[]){
   float dR_cut_ele = 0.01;
   float dR_cut_mu = 0.01;
   float ip3D = 0.0175;
-  float sip3D = 2.5;
+  float sip3D = 8.0;
   float dxy = 0.05;
   float dz = 0.1;
 
@@ -261,7 +267,8 @@ int main(int argc, char *argv[]){
   KUAnalysis *ku = new KUAnalysis(tch);
 
   int nEntries = ku->fChain->GetEntries();
-  int nEntries2 = 100000;
+  if(test)
+    nEntries = 100000;
 
   for(int e = 0; e < nEntries; e++){
     if (e % 10000 == 0) {
@@ -346,7 +353,7 @@ int main(int argc, char *argv[]){
 	miniIsoPtVsPt_sig->Fill(pt,miniIso*pt,weight);
 	//cout <<  ku->weight << endl; 
 
-	if(ku->ID_ele->at(idx) >= 0){
+	if(ku->ID_ele->at(idx) >= 0 && pt > 5){
 	  den_all_ele->Fill(pt,weight);
 	  //SUSY wp
 	  if(ku->FO_baseline_ele->at(idx) && ku->baseline_loose_ele->at(idx))
@@ -403,7 +410,7 @@ int main(int argc, char *argv[]){
 	}
 
 	//Tight electron denominator
-	if(ku->ID_ele->at(idx) >= 4){
+	if(ku->ID_ele->at(idx) >= 4 && pt > 5){
 	  den_tight_ele->Fill(pt,weight);
 	  if(miniIso < 0.1)
 	    num_SUSY_tight_ele_iso0p1->Fill(pt,weight);
@@ -444,7 +451,7 @@ int main(int argc, char *argv[]){
 	miniIsoVsPt_mu_sig->Fill(pt,miniIso,weight);
         miniIsoPtVsPt_mu_sig->Fill(pt,miniIso*pt,weight);
 
-	if(ku->ID_mu->at(idx) >= 0){
+	if(ku->ID_mu->at(idx) >= 0 && pt > 5){
           den_all_mu->Fill(pt,weight);
 	  //Muon working points 
 	  if(ku->baseline_loose_mu->at(idx))
@@ -474,7 +481,7 @@ int main(int argc, char *argv[]){
           if(fabs(ku->Muon_dz->at(idx)) < dz)
             num_dz_mu->Fill(pt,weight);
 	}
-	if(ku->Muon_mediumPromptId->at(idx)){
+	if(ku->Muon_mediumPromptId->at(idx) && pt > 5){
           den_medPrompt_mu->Fill(pt,weight);
           if(miniIso < 0.1)
             num_SUSY_medPrompt_mu_iso0p1->Fill(pt,weight);
@@ -490,140 +497,149 @@ int main(int argc, char *argv[]){
       
     }
     if(!isGenZ && !isGenW && !isGenTau){
-
+      //cout << "electron fake ID's" << endl;
       //Electron fakes
-      for(int i = 0; i < ku->Nele; i++){
+      //if(ku->genNele == 0){//For DYJets only
+	for(int i = 0; i < ku->Nele; i++){
 
-	pt = ku->Electron_pt->at(i);
-	miniIso = ku->MiniIso_ele->at(i);
-
-	miniIsoVsPt_fake->Fill(pt,miniIso,weight);
-	miniIsoPtVsPt_fake->Fill(pt,miniIso*pt,weight);
-
-	if(ku->ID_ele->at(i) >= 0){
-	  den_fake_ele->Fill(pt,weight);
-	  //Selection criteria fakerates
-	  if(ku->Electron_lostHits->at(i) == 0)
-	    num_lostHits_f->Fill(pt,weight);
-	  if(ku->Electron_ip3d->at(i) < ip3D)
-	    num_ip3D_f->Fill(pt,weight);
-	  if(ku->Electron_sip3d->at(i) < sip3D)
-	    num_sip3D_f->Fill(pt,weight);
-	  if(ku->Electron_sip3d->at(i) < 4.0)
-            num_sip3D_f_4->Fill(pt,weight);
-	  if(ku->Electron_sip3d->at(i) < 8.0)
-            num_sip3D_f_8->Fill(pt,weight);
-	  if(ku->Electron_convVeto->at(i))
-	    num_convVeto_f->Fill(pt,weight);
-	  if(fabs(ku->Electron_dxy->at(i)) < dxy)
-	    num_dxy_f->Fill(pt,weight);
-	  if(fabs(ku->Electron_dz->at(i)) < dz)
-	    num_dz_f->Fill(pt,weight);
-
-	  //SUSY wp fakerates
-	  if(ku->FO_baseline_ele->at(i) && ku->baseline_loose_ele->at(i))
-            num_bl_fr_ele->Fill(pt,weight);
-          if(ku->ID_ele->at(i) >= 2)
-            num_vl_fr_ele->Fill(pt,weight);
-          if(ku->ID_ele->at(i) >= 3)
-            num_l_fr_ele->Fill(pt,weight);
-          if(ku->ID_ele->at(i) >= 4)// && ku->baseline_tight_ele->at(i))
-            num_t_fr_ele->Fill(pt,weight);
-
-	  //EGamma wp Fall17V1 fakerates
-	  if(ku->Electron_mvaFall17V1noIso_WP80->at(i))
-            num_WP80V1_fr->Fill(pt,weight);
-          if(ku->Electron_mvaFall17V1noIso_WP90->at(i))
-            num_WP90V1_fr->Fill(pt,weight);
-          if(ku->Electron_mvaFall17V1noIso_WPL->at(i))
-            num_WPLV1_fr->Fill(pt,weight);
-
-	  //EGamma wp Fall17V1 fakerates
-          if(ku->Electron_mvaFall17V2noIso_WP80->at(i))
-            num_WP80V2_fr->Fill(pt,weight);
-          if(ku->Electron_mvaFall17V2noIso_WP90->at(i))
-            num_WP90V2_fr->Fill(pt,weight);
-          if(ku->Electron_mvaFall17V2noIso_WPL->at(i))
-            num_WPLV2_fr->Fill(pt,weight);
-	}
-	if(ku->ID_ele->at(i) >= 4){
-          den_tight_fake_ele->Fill(pt,weight);
-          if(miniIso < 0.1)
-            num_SUSY_tight_ele_iso0p1_fr->Fill(pt,weight);
-          if(miniIso < 0.2)
-            num_SUSY_tight_ele_iso0p2_fr->Fill(pt,weight);
-          if(miniIso*pt < 4.)
-            num_SUSY_tight_ele_iso4_fr->Fill(pt,weight);
-          if(miniIso*pt < 6.)
-            num_SUSY_tight_ele_iso6_fr->Fill(pt,weight);
-        }
+	  pt = ku->Electron_pt->at(i);
+	  miniIso = ku->MiniIso_ele->at(i);
+	  
+	  miniIsoVsPt_fake->Fill(pt,miniIso,weight);
+	  miniIsoPtVsPt_fake->Fill(pt,miniIso*pt,weight);
+	  
+	  if(ku->ID_ele->at(i) >= 0 && pt > 5){
+	    //for(int j = 0; j < ku->genNele; j++)
+	      //cout << "electron from: " << ku->genMomPDGID_ele->at(j) << endl;
+	    den_fake_ele->Fill(pt,weight);
+	    //Selection criteria fakerates
+	    if(ku->Electron_lostHits->at(i) == 0)
+	      num_lostHits_f->Fill(pt,weight);
+	    if(ku->Electron_ip3d->at(i) < ip3D)
+	      num_ip3D_f->Fill(pt,weight);
+	    if(ku->Electron_sip3d->at(i) < sip3D)
+	      num_sip3D_f->Fill(pt,weight);
+	    if(ku->Electron_sip3d->at(i) < 4.0)
+	      num_sip3D_f_4->Fill(pt,weight);
+	    if(ku->Electron_sip3d->at(i) < 8.0)
+	      num_sip3D_f_8->Fill(pt,weight);
+	    if(ku->Electron_convVeto->at(i))
+	      num_convVeto_f->Fill(pt,weight);
+	    if(fabs(ku->Electron_dxy->at(i)) < dxy)
+	      num_dxy_f->Fill(pt,weight);
+	    if(fabs(ku->Electron_dz->at(i)) < dz)
+	      num_dz_f->Fill(pt,weight);
+	    
+	    //SUSY wp fakerates
+	    if(ku->FO_baseline_ele->at(i) && ku->baseline_loose_ele->at(i))
+	      num_bl_fr_ele->Fill(pt,weight);
+	    if(ku->ID_ele->at(i) >= 2)
+	      num_vl_fr_ele->Fill(pt,weight);
+	    if(ku->ID_ele->at(i) >= 3)
+	      num_l_fr_ele->Fill(pt,weight);
+	    if(ku->ID_ele->at(i) >= 4)// && ku->baseline_tight_ele->at(i))
+	      num_t_fr_ele->Fill(pt,weight);
+	    
+	    //EGamma wp Fall17V1 fakerates
+	    if(ku->Electron_mvaFall17V1noIso_WP80->at(i))
+	      num_WP80V1_fr->Fill(pt,weight);
+	    if(ku->Electron_mvaFall17V1noIso_WP90->at(i))
+	      num_WP90V1_fr->Fill(pt,weight);
+	    if(ku->Electron_mvaFall17V1noIso_WPL->at(i))
+	      num_WPLV1_fr->Fill(pt,weight);
+	    
+	    //EGamma wp Fall17V1 fakerates
+	    if(ku->Electron_mvaFall17V2noIso_WP80->at(i))
+	      num_WP80V2_fr->Fill(pt,weight);
+	    if(ku->Electron_mvaFall17V2noIso_WP90->at(i))
+	      num_WP90V2_fr->Fill(pt,weight);
+	    if(ku->Electron_mvaFall17V2noIso_WPL->at(i))
+	      num_WPLV2_fr->Fill(pt,weight);
+	  }
+	  if(ku->ID_ele->at(i) >= 4 && pt > 5){
+	    den_tight_fake_ele->Fill(pt,weight);
+	    if(miniIso < 0.1)
+	      num_SUSY_tight_ele_iso0p1_fr->Fill(pt,weight);
+	    if(miniIso < 0.2)
+	      num_SUSY_tight_ele_iso0p2_fr->Fill(pt,weight);
+	    if(miniIso*pt < 4.)
+	      num_SUSY_tight_ele_iso4_fr->Fill(pt,weight);
+	    if(miniIso*pt < 6.)
+	      num_SUSY_tight_ele_iso6_fr->Fill(pt,weight);
+	  }
+	  //}
       }//end electron fakes
-
+      
       //Muon fakes
-      for(int i = 0; i < ku->Nmu; i++){
+	if(ku->genNmu == 0){//For TTJets and DYJets
+	//cout << "muon fake ID's" << endl;
+	for(int i = 0; i < ku->Nmu; i++){
 
-	pt = ku->Muon_pt->at(i);
-        miniIso = ku->MiniIso_mu->at(i);
+	  pt = ku->Muon_pt->at(i);
+	  miniIso = ku->MiniIso_mu->at(i);
 
-	miniIsoVsPt_mu_fake->Fill(pt,miniIso,weight);
-        miniIsoPtVsPt_mu_fake->Fill(pt,miniIso*pt,weight);
+	  miniIsoVsPt_mu_fake->Fill(pt,miniIso,weight);
+	  miniIsoPtVsPt_mu_fake->Fill(pt,miniIso*pt,weight);
+	  
+	  if(ku->ID_mu->at(i) >= 0 && pt > 5){
+	    //for(int j = 0; j < ku->genNmu; j++)
+	      //cout << "muon from: " << ku->genMomPDGID_mu->at(j) << endl;
+	    den_fake_mu->Fill(pt,weight);
+	    if(ku->baseline_loose_mu->at(i))
+	      num_bl_fr_mu->Fill(pt,weight);
+	    if(ku->Muon_mediumId->at(i))
+	      num_m_fr_mu->Fill(pt,weight);
+	    if(ku->Muon_mediumPromptId->at(i))
+	      num_mp_fr_mu->Fill(pt,weight);
+	    if(ku->Muon_tightId->at(i))// && ku->baseline_tight_mu->at(i))
+	      num_t_fr_mu->Fill(pt,weight);
+	    if(ku->Muon_softId->at(i))
+	      num_sid_fr_mu->Fill(pt,weight);
+	    if(ku->Muon_softMvaId->at(i))
+	      num_smva_fr_mu->Fill(pt,weight);
 
-        if(ku->ID_mu->at(i) >= 0){
-          den_fake_mu->Fill(pt,weight);
-	  if(ku->baseline_loose_mu->at(i))
-            num_bl_fr_mu->Fill(pt,weight);
-          if(ku->Muon_mediumId->at(i))
-            num_m_fr_mu->Fill(pt,weight);
-          if(ku->Muon_mediumPromptId->at(i))
-            num_mp_fr_mu->Fill(pt,weight);
-          if(ku->Muon_tightId->at(i))// && ku->baseline_tight_mu->at(i))
-            num_t_fr_mu->Fill(pt,weight);
-          if(ku->Muon_softId->at(i))
-            num_sid_fr_mu->Fill(pt,weight);
-          if(ku->Muon_softMvaId->at(i))
-            num_smva_fr_mu->Fill(pt,weight);
+	    //Muon selection criteria
+	    if(ku->Muon_ip3d->at(i) < ip3D)
+	      num_ip3D_fr_mu->Fill(pt,weight);
+	    if(ku->Muon_sip3d->at(i) < sip3D)
+	      num_sip3D_fr_mu->Fill(pt,weight);
+	    if(ku->Muon_sip3d->at(i) < 4.0)
+	      num_sip3D_fr_mu_4->Fill(pt,weight);
+	    if(ku->Muon_sip3d->at(i) < 8.0)
+	      num_sip3D_fr_mu_8->Fill(pt,weight);
+	    if(fabs(ku->Muon_dxy->at(i)) < dxy)
+	      num_dxy_fr_mu->Fill(pt,weight);
+	    if(fabs(ku->Muon_dz->at(i)) < dz)
+	      num_dz_fr_mu->Fill(pt,weight);
+	  }
+	  if(ku->Muon_mediumPromptId->at(i) && pt > 5){
+	    den_medPrompt_fake_mu->Fill(pt,weight);
+	    if(miniIso < 0.1)
+	      num_SUSY_medPrompt_mu_iso0p1_fr->Fill(pt,weight);
+	    if(miniIso < 0.2)
+	      num_SUSY_medPrompt_mu_iso0p2_fr->Fill(pt,weight);
+	    if(miniIso*pt < 4.)
+	      num_SUSY_medPrompt_mu_iso4_fr->Fill(pt,weight);
+	    if(miniIso*pt < 6.)
+	      num_SUSY_medPrompt_mu_iso6_fr->Fill(pt,weight);
+	  }
 
-	  //Muon selection criteria
-          if(ku->Muon_ip3d->at(i) < ip3D)
-            num_ip3D_fr_mu->Fill(pt,weight);
-          if(ku->Muon_sip3d->at(i) < sip3D)
-            num_sip3D_fr_mu->Fill(pt,weight);
-	  if(ku->Muon_sip3d->at(i) < 4.0)
-            num_sip3D_fr_mu_4->Fill(pt,weight);
-	  if(ku->Muon_sip3d->at(i) < 8.0)
-            num_sip3D_fr_mu_8->Fill(pt,weight);
-          if(fabs(ku->Muon_dxy->at(i)) < dxy)
-            num_dxy_fr_mu->Fill(pt,weight);
-          if(fabs(ku->Muon_dz->at(i)) < dz)
-            num_dz_fr_mu->Fill(pt,weight);
+	  if(miniIso*pt < 4. && pt > 5){
+	    den_iso4_fake_mu->Fill(pt,weight);
+	    if(ku->Muon_mediumId->at(i))
+	      num_m_iso4_fr_mu->Fill(pt,weight);
+	    if(ku->Muon_mediumPromptId->at(i))
+	      num_mp_iso4_fr_mu->Fill(pt,weight);
+	    if(ku->Muon_tightId->at(i))
+	      num_t_iso4_fr_mu->Fill(pt,weight);
+	    if(ku->Muon_softId->at(i))
+	      num_sid_iso4_fr_mu->Fill(pt,weight);
+	    if(ku->Muon_softMvaId->at(i))
+	      num_smva_iso4_fr_mu->Fill(pt,weight);
+	  }
 	}
-	if(ku->Muon_mediumPromptId->at(i)){
-          den_medPrompt_fake_mu->Fill(pt,weight);
-          if(miniIso < 0.1)
-            num_SUSY_medPrompt_mu_iso0p1_fr->Fill(pt,weight);
-          if(miniIso < 0.2)
-            num_SUSY_medPrompt_mu_iso0p2_fr->Fill(pt,weight);
-          if(miniIso*pt < 4.)
-            num_SUSY_medPrompt_mu_iso4_fr->Fill(pt,weight);
-          if(miniIso*pt < 6.)
-            num_SUSY_medPrompt_mu_iso6_fr->Fill(pt,weight);
-        }
+      }//end muon fakes
 
-	if(miniIso*pt < 4.){
-	  den_iso4_fake_mu->Fill(pt,weight);
-	  if(ku->Muon_mediumId->at(i))
-            num_m_iso4_fr_mu->Fill(pt,weight);
-          if(ku->Muon_mediumPromptId->at(i))
-            num_mp_iso4_fr_mu->Fill(pt,weight);
-          if(ku->Muon_tightId->at(i))
-            num_t_iso4_fr_mu->Fill(pt,weight);
-          if(ku->Muon_softId->at(i))
-            num_sid_iso4_fr_mu->Fill(pt,weight);
-          if(ku->Muon_softMvaId->at(i))
-            num_smva_iso4_fr_mu->Fill(pt,weight);
-	}
-
-      }
     }
   }
   cout << endl;
@@ -637,12 +653,13 @@ int main(int argc, char *argv[]){
   TEfficiency *eff_m_ele = new TEfficiency(*num_m_ele,*den_all_ele);
   TEfficiency *eff_t_ele = new TEfficiency(*num_t_ele,*den_all_ele);
 
-  eff_wp_ele.push_back(eff_vl_ele); label_wp_ele.push_back("baseline");
+  //eff_wp_ele.push_back(eff_vl_ele); label_wp_ele.push_back("baseline");
   eff_wp_ele.push_back(eff_l_ele); label_wp_ele.push_back("very loose");
   eff_wp_ele.push_back(eff_m_ele); label_wp_ele.push_back("loose");
   eff_wp_ele.push_back(eff_t_ele); label_wp_ele.push_back("tight");
 
   PlotEff(eff_wp_ele,label_wp_ele,"eff_wp_ele", ele_label, ylabel_eff, samplename, true);
+  PlotEff(eff_wp_ele,label_wp_ele,"eff_wp_ele_zoom", ele_label, ylabel_eff, samplename, true, 1.01, 0.7);
 
   //Working point fakerates (SUSY group)
   vector<TEfficiency*> fr_wp_ele;
@@ -652,12 +669,13 @@ int main(int argc, char *argv[]){
   TEfficiency *fr_l_ele = new TEfficiency(*num_l_fr_ele,*den_fake_ele);
   TEfficiency *fr_t_ele = new TEfficiency(*num_t_fr_ele,*den_fake_ele);
 
-  fr_wp_ele.push_back(fr_bl_ele); 
+  //fr_wp_ele.push_back(fr_bl_ele); 
   fr_wp_ele.push_back(fr_vl_ele); 
   fr_wp_ele.push_back(fr_l_ele); 
   fr_wp_ele.push_back(fr_t_ele); 
 
   PlotEff(fr_wp_ele,label_wp_ele,"fr_wp_ele",ele_label, ylabel_fr, samplename, false);
+  PlotEff(fr_wp_ele,label_wp_ele,"fr_wp_ele_zoom",ele_label, ylabel_fr, samplename, false, 0.4);
 
   //Working point efficiencies with baseline selection (SUSY group)
   vector<TEfficiency*> eff_wp_bl_ele;
@@ -671,7 +689,7 @@ int main(int argc, char *argv[]){
   eff_wp_bl_ele.push_back(eff_l_bl_ele); label_wp_bl_ele.push_back("loose");
   eff_wp_bl_ele.push_back(eff_t_bl_ele); label_wp_bl_ele.push_back("tight");
 
-  PlotEff(eff_wp_bl_ele,label_wp_bl_ele,"eff_wp_bl_ele", ele_label,ylabel_eff, samplename, true);
+  //PlotEff(eff_wp_bl_ele,label_wp_bl_ele,"eff_wp_bl_ele", ele_label,ylabel_eff, samplename, true);
 
   //Working point efficiencies (Egamma Fall17V1)
   vector<TEfficiency*> eff_wp_v1;
@@ -711,7 +729,7 @@ int main(int argc, char *argv[]){
   eff_wp_v2.push_back(eff_wp90_v2); 
   eff_wp_v2.push_back(eff_wp80_v2);
 
-  PlotEff(eff_wp_v2,label_wp_egamma,"eff_wp_egV2", ele_label,ylabel_eff, samplename, true);
+  //PlotEff(eff_wp_v2,label_wp_egamma,"eff_wp_egV2", ele_label,ylabel_eff, samplename, true);
 
   //Working point fakerate (Egamma Fall17V2)
   vector<TEfficiency*> fr_wp_v2;
@@ -724,7 +742,7 @@ int main(int argc, char *argv[]){
   fr_wp_v2.push_back(fr_wp90_v2);
   fr_wp_v2.push_back(fr_wp80_v2);
 
-  PlotEff(fr_wp_v2,label_wp_egamma,"fr_wp_egV2", ele_label, ylabel_fr, samplename, false);
+  //PlotEff(fr_wp_v2,label_wp_egamma,"fr_wp_egV2", ele_label, ylabel_fr, samplename, false);
 
   //Working point muon efficiencies
   vector<TEfficiency*> eff_wp_mu;
@@ -737,14 +755,15 @@ int main(int argc, char *argv[]){
   TEfficiency *eff_sid_mu = new TEfficiency(*num_sid_mu,*den_all_mu);
   TEfficiency *eff_smva_mu = new TEfficiency(*num_smva_mu,*den_all_mu);
 
-  eff_wp_mu.push_back(eff_bl_mu); label_wp_mu.push_back("baseline");
+  //eff_wp_mu.push_back(eff_bl_mu); label_wp_mu.push_back("baseline");
   eff_wp_mu.push_back(eff_m_mu); label_wp_mu.push_back("medium");
   eff_wp_mu.push_back(eff_mp_mu); label_wp_mu.push_back("medium prompt");
   eff_wp_mu.push_back(eff_t_mu); label_wp_mu.push_back("tight");
-  eff_wp_mu.push_back(eff_sid_mu); label_wp_mu.push_back("soft ID");
-  eff_wp_mu.push_back(eff_smva_mu); label_wp_mu.push_back("soft MVA ID");
+  //eff_wp_mu.push_back(eff_sid_mu); label_wp_mu.push_back("soft ID");
+  //eff_wp_mu.push_back(eff_smva_mu); label_wp_mu.push_back("soft MVA ID");
 
   PlotEff(eff_wp_mu, label_wp_mu, "eff_wp_mu", mu_label, ylabel_eff, samplename, true);
+  PlotEff(eff_wp_mu, label_wp_mu, "eff_wp_mu_zoom", mu_label, ylabel_eff, samplename, true, 1.005, 0.9);
 
   //Working point muon fakerate
   vector<TEfficiency*> fr_wp_mu;
@@ -756,14 +775,15 @@ int main(int argc, char *argv[]){
   TEfficiency *fr_sid_mu = new TEfficiency(*num_sid_fr_mu,*den_fake_mu);
   TEfficiency *fr_smva_mu = new TEfficiency(*num_smva_fr_mu,*den_fake_mu);
 
-  fr_wp_mu.push_back(fr_bl_mu); 
+  //fr_wp_mu.push_back(fr_bl_mu); 
   fr_wp_mu.push_back(fr_m_mu); 
   fr_wp_mu.push_back(fr_mp_mu);
   fr_wp_mu.push_back(fr_t_mu); 
-  fr_wp_mu.push_back(fr_sid_mu);
-  fr_wp_mu.push_back(fr_smva_mu);
+  //fr_wp_mu.push_back(fr_sid_mu);
+  //fr_wp_mu.push_back(fr_smva_mu);
 
-  PlotEff(fr_wp_mu, label_wp_mu, "fr_wp_mu", mu_label, ylabel_fr, samplename, true);
+  PlotEff(fr_wp_mu, label_wp_mu, "fr_wp_mu", mu_label, ylabel_fr, samplename, false);
+  PlotEff(fr_wp_mu, label_wp_mu, "fr_wp_mu_zoom", mu_label, ylabel_fr, samplename, false, 0.4);
 
   //Fakerate isolated muons (pt*miniIso < 4.0)
   vector<TEfficiency*> fr_iso4_wp_mu;
@@ -778,8 +798,8 @@ int main(int argc, char *argv[]){
   fr_iso4_wp_mu.push_back(fr_iso4_m_mu);label_iso4_wp_fr_mu.push_back("medium");
   fr_iso4_wp_mu.push_back(fr_iso4_mp_mu);label_iso4_wp_fr_mu.push_back("medium prompt");
   fr_iso4_wp_mu.push_back(fr_iso4_t_mu);label_iso4_wp_fr_mu.push_back("tight");
-  fr_iso4_wp_mu.push_back(fr_iso4_sid_mu);label_iso4_wp_fr_mu.push_back("soft ID");
-  fr_iso4_wp_mu.push_back(fr_iso4_smva_mu);label_iso4_wp_fr_mu.push_back("soft MVA ID");
+  //fr_iso4_wp_mu.push_back(fr_iso4_sid_mu);label_iso4_wp_fr_mu.push_back("soft ID");
+  //fr_iso4_wp_mu.push_back(fr_iso4_smva_mu);label_iso4_wp_fr_mu.push_back("soft MVA ID");
 
   PlotEff(fr_iso4_wp_mu, label_iso4_wp_fr_mu, "fr_iso4_wp_fr_mu", mu_label, ylabel_fr, samplename, true);
 
@@ -797,10 +817,10 @@ int main(int argc, char *argv[]){
   TEfficiency *eff_dxy = new TEfficiency(*num_dxy,*den_all_ele);
   TEfficiency *eff_dz = new TEfficiency(*num_dz,*den_all_ele);
 
-  eff_sel.push_back(eff_ip3D); label_sel.push_back(Form("ip3D < %.4f",ip3D));
+  //eff_sel.push_back(eff_ip3D); label_sel.push_back(Form("ip3D < %.4f",ip3D));
   eff_sel.push_back(eff_sip3D); label_sel.push_back(Form("sip3D < %.1f",sip3D));
-  eff_sel.push_back(eff_sip3D_4); label_sel.push_back("sip3D < 4.0");
-  eff_sel.push_back(eff_sip3D_8); label_sel.push_back("sip3D < 8.0");
+  //eff_sel.push_back(eff_sip3D_4); label_sel.push_back("sip3D < 4.0");
+  //eff_sel.push_back(eff_sip3D_8); label_sel.push_back("sip3D < 8.0");
   eff_sel.push_back(eff_dxy); label_sel.push_back(Form("dxy < %.2f",dxy));
   eff_sel.push_back(eff_dz); label_sel.push_back(Form("dz < %.2f",dz));
   eff_sel.push_back(eff_lostHits); label_sel.push_back(Form("pass lostHits"));
@@ -815,10 +835,10 @@ int main(int argc, char *argv[]){
   TEfficiency *fake_dxy = new TEfficiency(*num_dxy_f,*den_fake_ele);
   TEfficiency *fake_dz = new TEfficiency(*num_dz_f,*den_fake_ele);
 
-  fake_sel.push_back(fake_ip3D);
+  //fake_sel.push_back(fake_ip3D);
   fake_sel.push_back(fake_sip3D);
-  fake_sel.push_back(fake_sip3D_4);
-  fake_sel.push_back(fake_sip3D_8);
+  //fake_sel.push_back(fake_sip3D_4);
+  //fake_sel.push_back(fake_sip3D_8);
   fake_sel.push_back(fake_dxy);
   fake_sel.push_back(fake_dz);
   fake_sel.push_back(fake_lostHits);
@@ -839,10 +859,10 @@ int main(int argc, char *argv[]){
   TEfficiency *eff_dxy_mu   = new TEfficiency(*num_dxy_mu,*den_all_mu);
   TEfficiency *eff_dz_mu    = new TEfficiency(*num_dz_mu,*den_all_mu);
 
-  eff_sel_mu.push_back(eff_ip3D_mu); label_sel_mu.push_back(Form("ip3D < %.4f",ip3D));
+  //eff_sel_mu.push_back(eff_ip3D_mu); label_sel_mu.push_back(Form("ip3D < %.4f",ip3D));
   eff_sel_mu.push_back(eff_sip3D_mu); label_sel_mu.push_back(Form("sip3D < %.1f",sip3D));
-  eff_sel_mu.push_back(eff_sip3D_mu_4); label_sel_mu.push_back("sip3D < 4.0");
-  eff_sel_mu.push_back(eff_sip3D_mu_8); label_sel_mu.push_back("sip3D < 8.0");
+  //eff_sel_mu.push_back(eff_sip3D_mu_4); label_sel_mu.push_back("sip3D < 4.0");
+  //eff_sel_mu.push_back(eff_sip3D_mu_8); label_sel_mu.push_back("sip3D < 8.0");
   eff_sel_mu.push_back(eff_dxy_mu); label_sel_mu.push_back(Form("dxy < %.2f",dxy));
   eff_sel_mu.push_back(eff_dz_mu); label_sel_mu.push_back(Form("dz < %.2f",dz));
 
@@ -853,10 +873,10 @@ int main(int argc, char *argv[]){
   TEfficiency *fake_dxy_mu   = new TEfficiency(*num_dxy_fr_mu,*den_fake_mu);
   TEfficiency *fake_dz_mu    = new TEfficiency(*num_dz_fr_mu,*den_fake_mu);
 
-  fake_sel_mu.push_back(fake_ip3D_mu);
+  //fake_sel_mu.push_back(fake_ip3D_mu);
   fake_sel_mu.push_back(fake_sip3D_mu);
-  fake_sel_mu.push_back(fake_sip3D_mu_4);
-  fake_sel_mu.push_back(fake_sip3D_mu_8);
+  //fake_sel_mu.push_back(fake_sip3D_mu_4);
+  //fake_sel_mu.push_back(fake_sip3D_mu_8);
   fake_sel_mu.push_back(fake_dxy_mu);
   fake_sel_mu.push_back(fake_dz_mu);
 
@@ -875,6 +895,7 @@ int main(int argc, char *argv[]){
   eff_wp_comb_v2_ele.push_back(eff_wp90_v2); label_wp_comb_v2_ele.push_back("WP90");
 
   PlotEff(eff_wp_comb_v2_ele,label_wp_comb_v2_ele,"eff_wp_comb_v2_ele", ele_label, ylabel_eff, samplename, true);
+  PlotEff(eff_wp_comb_v2_ele,label_wp_comb_v2_ele,"eff_wp_comb_v2_ele_zoom", ele_label, ylabel_eff, samplename, true, 1.01, 0.5);
 
   //Electron WP comparison fakerate (SUSY and Fall17V2)
   vector<TEfficiency*> fr_wp_comb_v2_ele;
@@ -887,6 +908,7 @@ int main(int argc, char *argv[]){
   fr_wp_comb_v2_ele.push_back(fr_wp90_v2);
 
   PlotEff(fr_wp_comb_v2_ele,label_wp_comb_v2_ele,"fr_wp_comb_v2_ele", ele_label, ylabel_fr, samplename, false);
+  PlotEff(fr_wp_comb_v2_ele,label_wp_comb_v2_ele,"fr_wp_comb_v2_ele_zoom", ele_label, ylabel_fr, samplename, false,0.4);
 
   //Electron tight SUSY WP isolation efficiency
   vector<TEfficiency*> eff_tight_ele_iso;
@@ -955,6 +977,7 @@ int main(int argc, char *argv[]){
   PlotEff(fr_medPrompt_mu_iso,label_medPrompt_mu_iso,"fr_medPrompt_mu_iso", mu_label, ylabel_fr, samplename, false);
 
   //Other Plots
+  /*
   Plot1D(dR_ele,"deltaR_ele",samplename);
   Plot1D(dR_mu, "deltaR_mu",samplename);
 
@@ -967,7 +990,7 @@ int main(int argc, char *argv[]){
   Plot2D(miniIsoPtVsPt_mu_sig,"miniIsoPtVsPt_sig_mu",mu_label,"MiniIso #upoint p_{T}",samplename);
   Plot2D(miniIsoVsPt_mu_fake,"miniIsoVsPt_fake_mu",mu_label,"MiniIso",samplename);
   Plot2D(miniIsoPtVsPt_mu_fake,"miniIsoPtVsPt_fake_mu",mu_label,"MiniIso #upoint p_{T}",samplename);
-
+  */
   RocCurve(eff_sel, fake_sel, label_sel, nbins, "ROC_sel",samplename);
   RocCurve(eff_wp_ele, fr_wp_ele, label_wp_ele, nbins, "ROC_SUSY_wp_ele", samplename);
   RocCurve(eff_wp_v1, fr_wp_v1, label_wp_egamma, nbins, "ROC_Egamma_wp_v1", samplename);
@@ -978,9 +1001,10 @@ int main(int argc, char *argv[]){
   return 0;
 }
 
-void PlotEff(vector<TEfficiency*> vec_eff, vector<TString> vec_names, TString name, TString xlabel, TString ylabel, TString sample, bool leg_pos){
+vector<int> clrs = {kBlue+2,kGreen+2,kRed+2,kOrange-3,kMagenta-1,kBlack,kAzure+2,kGray};
+vector<int> markers = {20,21,22,23,29,33,34,43,49};
 
-  vector<int> clrs = {kBlue+2,kGreen+2,kRed+2,kOrange-3,kMagenta-1,kBlack,kAzure+2,kGray};
+void PlotEff(vector<TEfficiency*> vec_eff, vector<TString> vec_names, TString name, TString xlabel, TString ylabel, TString sample, bool leg_pos, float ymax, float ymin){
 
   gROOT->SetBatch(kTRUE);
   gStyle->SetOptTitle(0);
@@ -993,7 +1017,7 @@ void PlotEff(vector<TEfficiency*> vec_eff, vector<TString> vec_names, TString na
   can->SetGrid();
 
   for(int i = 0; i < vec_eff.size(); i++){
-    vec_eff[i]->SetMarkerStyle(10);
+    vec_eff[i]->SetMarkerStyle(markers[i]);
     vec_eff[i]->SetMarkerColor(clrs[i]);
     vec_eff[i]->SetLineColor(clrs[i]);
     vec_eff[i]->SetStatisticOption(TEfficiency::kFNormal);
@@ -1009,8 +1033,8 @@ void PlotEff(vector<TEfficiency*> vec_eff, vector<TString> vec_names, TString na
   }
 
   mg->Draw("ap");
-  mg->SetMinimum(0); 
-  mg->SetMaximum(1.05); 
+  mg->SetMinimum(ymin); 
+  mg->SetMaximum(ymax); 
   mg->GetXaxis()->SetTitle(xlabel);
   mg->GetXaxis()->SetTitleOffset(1.25);
   mg->GetYaxis()->SetTitle(ylabel);
@@ -1019,6 +1043,9 @@ void PlotEff(vector<TEfficiency*> vec_eff, vector<TString> vec_names, TString na
   for(int i = 1; i < vec_eff.size(); i++){
     vec_eff[i]->Draw("same");
     leg->AddEntry(vec_eff[i],vec_names[i],"lep");
+    if(vec_eff.size() > 4)
+      leg->SetNColumns(2);
+    
   } 
 
   leg->Draw("same");
@@ -1079,7 +1106,7 @@ void RocCurve(vector<TEfficiency*> eff, vector<TEfficiency*> fakes, vector<TStri
 
   int const size = eff.size();
 
-  vector<int> clrs = {kBlue+2,kGreen+2,kRed+2,kOrange-3,kMagenta-2,kBlack,kAzure+2,kGray};
+  //vector<int> clrs = {kBlue+2,kGreen+2,kRed+2,kOrange-3,kMagenta-2,kBlack,kAzure+2,kGray};
 
   gROOT->SetBatch(kTRUE);
   gStyle->SetOptTitle(0);
@@ -1101,7 +1128,7 @@ void RocCurve(vector<TEfficiency*> eff, vector<TEfficiency*> fakes, vector<TStri
 
   for (int i = 0; i < size; i++){
     tgae_vec.push_back(RocFromEff(eff[i], fakes[i], nbins));
-    tgae_vec[i]->SetMarkerStyle(10);
+    tgae_vec[i]->SetMarkerStyle(markers[i]);
     tgae_vec[i]->SetMarkerColor(clrs[i]);
     tgae_vec[i]->SetLineColor(clrs[i]);
     tgae_vec[i]->SetLineWidth(1);
