@@ -551,7 +551,7 @@ int GetMatchedMomID(TLorentzVector leptonCand, bool &isMatched, bool &isSignal, 
 	  genPartMotherID = ku->GenPart_pdgId->at(genPartMotherIdx);
 	else continue;
       }
-      cout << "   gen Mom ID: " << genPartMotherID << endl;
+      //cout << "   gen Mom ID: " << genPartMotherID << endl;
       if(abs(genPartMotherID) != 11 && abs(genPartMotherID) != 13 && !isSignal){
 	isMatched = true;
 	leptonMomID = genPartMotherID;
