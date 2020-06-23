@@ -16,7 +16,18 @@ TTree* LeptonNtuple::InitOutputTree(const string& sample){
   TTree* tree = (TTree*) new TTree(sample.c_str(), sample.c_str());
 
   tree->Branch("weight", &m_weight);
+
+  tree->Branch("MET_pt", &m_met);
   
+  tree->Branch("nGenPart", &m_nGenPart);
+  tree->Branch("GenPart_eta",&m_GenPart_eta);
+  tree->Branch("GenPart_mass",&m_GenPart_mass);
+  tree->Branch("GenPart_phi",&m_GenPart_phi);
+  tree->Branch("GenPart_pt",&m_GenPart_pt);
+  tree->Branch("GenPart_genPartIdxMother",&m_GenPart_genPartIdxMother);
+  tree->Branch("GenPart_pdgId",&m_GenPart_pdgId);
+  tree->Branch("GenPart_status",&m_GenPart_status);
+
   //electrons
   tree->Branch("Nele", &m_Nele);
   tree->Branch("PT_ele",  &m_PT_ele);
@@ -284,6 +295,13 @@ void LeptonNtuple::ClearVariables(){
   m_Muon_tkIsoId.clear();
   m_Muon_triggerIdLoose.clear();
 
+  m_GenPart_eta.clear();
+  m_GenPart_mass.clear();
+  m_GenPart_phi.clear();
+  m_GenPart_pt.clear();
+  m_GenPart_genPartIdxMother.clear();
+  m_GenPart_pdgId.clear();
+  m_GenPart_status.clear();
 }
 
 void LeptonNtuple::FillOutputTree(TTree* tree){
@@ -291,6 +309,8 @@ void LeptonNtuple::FillOutputTree(TTree* tree){
   //InitNanoSUSYBranches();
   ClearVariables();
     
+  m_met = MET_pt;
+
   //Electrons
   ParticleList Electrons = AnalysisBase<SUSYNANOBase>::GetElectrons();
   Electrons = Electrons.PtEtaCut(3.5);
@@ -350,12 +370,12 @@ void LeptonNtuple::FillOutputTree(TTree* tree){
       m_baseline_ele.push_back(false);
 
     if(fabs(Electron_dxy[r]) < 0.05 && fabs(Electron_dz[r]) < 0.1){
-      if(Electron_ip3d[r] < 0.0175 && Electron_sip3d[r] < 2.5)
+      if(Electron_sip3d[r] < 8.0)
 	m_baseline_loose_ele.push_back(true);
       else
 	m_baseline_loose_ele.push_back(false);
 
-      if(Electron_ip3d[r] < 0.01 && Electron_sip3d[r] < 2.)
+      if(Electron_sip3d[r] < 6.)
         m_baseline_tight_ele.push_back(true);
       else
 	m_baseline_tight_ele.push_back(false);
@@ -474,12 +494,12 @@ void LeptonNtuple::FillOutputTree(TTree* tree){
     m_ID_mu.push_back(Muons[r].ParticleID());
 
     if(fabs(Muon_dxy[r]) < 0.05 && fabs(Muon_dz[r]) < 0.1){
-      if(Muon_ip3d[r] < 0.0175 && Muon_sip3d[r] < 2.5)
+      if(Muon_sip3d[r] < 8.0)
         m_baseline_loose_mu.push_back(true);
       else
 	m_baseline_loose_mu.push_back(false);
 
-      if(Muon_ip3d[r] < 0.01 && Muon_sip3d[r] < 2.)
+      if(Muon_sip3d[r] < 6.)
         m_baseline_tight_mu.push_back(true);
       else
 	m_baseline_tight_mu.push_back(false);
@@ -585,6 +605,21 @@ void LeptonNtuple::FillOutputTree(TTree* tree){
     m_genIndex_mu.push_back(genmatch_mu[g]);
   }
 
+  //Fill gen particle branches
+  
+  m_nGenPart = nGenPart; 
+
+  for(int g = 0; g < m_nGenPart; g++){
+    m_GenPart_eta.push_back(GenPart_eta[g]);
+    m_GenPart_mass.push_back(GenPart_mass[g]);
+    m_GenPart_phi.push_back(GenPart_phi[g]);
+    m_GenPart_pt.push_back(GenPart_pt[g]);
+    m_GenPart_genPartIdxMother.push_back(GenPart_genPartIdxMother[g]);
+    m_GenPart_pdgId.push_back(GenPart_pdgId[g]);
+    m_GenPart_status.push_back(GenPart_status[g]);
+  }
+
+
   // Fill output tree
   if(tree)
     tree->Fill();
@@ -594,6 +629,8 @@ void LeptonNtuple::FillOutputTree(TTree* tree){
 void LeptonNtuple::InitNanoSUSYBranches(){
 
   fChain->SetBranchStatus("*", 0);
+
+  fChain->SetBranchStatus("MET_pt", 1);
 
   fChain->SetBranchStatus("Electron_deltaEtaSC", 1);
   fChain->SetBranchStatus("Electron_dr03EcalRecHitSumEt", 1);
@@ -698,5 +735,14 @@ void LeptonNtuple::InitNanoSUSYBranches(){
   fChain->SetBranchStatus("Muon_tightId", 1);
   fChain->SetBranchStatus("Muon_tkIsoId", 1);
   fChain->SetBranchStatus("Muon_triggerIdLoose", 1);
+  fChain->SetBranchStatus("nGenPart", 1);
+  fChain->SetBranchStatus("GenPart_eta", 1);
+  fChain->SetBranchStatus("GenPart_mass", 1);
+  fChain->SetBranchStatus("GenPart_phi", 1);
+  fChain->SetBranchStatus("GenPart_pt", 1);
+  fChain->SetBranchStatus("GenPart_genPartIdxMother", 1);
+  fChain->SetBranchStatus("GenPart_pdgId", 1);
+  fChain->SetBranchStatus("GenPart_status", 1);
+
 
 }

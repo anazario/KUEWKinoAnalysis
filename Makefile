@@ -24,11 +24,15 @@ CC_FILES := $(wildcard src/*.cc)
 HH_FILES := $(wildcard include/*.hh)
 OBJ_FILES := $(addprefix $(OUTOBJ),$(notdir $(CC_FILES:.cc=.o)))
 
-all: MakeElectronNtuple.x MakeLeptonNtuple.x MakeEventCount.x  MakeEventCount_NANO.x MakeEffPlot.x
+all: MakeElectronNtuple.x MakeLeptonNtuple.x MakeEventCount.x  MakeEventCount_NANO.x MakeEffPlot.x MakeFakePlot.x
 
 MakeEffPlot.x: $(SRCDIR)MakeLeptonEff.C $(OBJ_FILES) $(HH_FILES)
 	$(CXX) $(CXXFLAGS) -o MakeEffPlot.x $(OUTOBJ)/*.o $(GLIBS) $ $<
 	touch MakeEffPlot.x
+
+MakeFakePlot.x: $(SRCDIR)EfficiencyTest.C $(OBJ_FILES) $(HH_FILES)
+	$(CXX) $(CXXFLAGS) -o MakeFakePlot.x $(OUTOBJ)/*.o $(GLIBS) $ $<
+	touch MakeFakePlot.x 
 
 #MakeReducedNtuple.x:  $(SRCDIR)MakeReducedNtuple.C $(OBJ_FILES) $(HH_FILES)
 #	$(CXX) $(CXXFLAGS) -o MakeReducedNtuple.x $(OUTOBJ)/*.o $(GLIBS) $ $<

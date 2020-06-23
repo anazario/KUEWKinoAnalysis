@@ -27,6 +27,14 @@ public :
    // Declaration of leaf types
    Double_t        weight;
    Double_t        MET_pt;
+   Int_t           nGenPart;
+   vector<float>   *GenPart_eta;
+   vector<float>   *GenPart_mass;
+   vector<float>   *GenPart_phi;
+   vector<float>   *GenPart_pt;
+   vector<int>     *GenPart_genPartIdxMother;
+   vector<int>     *GenPart_pdgId;
+   vector<int>     *GenPart_status;
    Int_t           Nele;
    vector<double>  *PT_ele;
    vector<double>  *Eta_ele;
@@ -168,6 +176,14 @@ public :
    // List of branches
    TBranch        *b_weight;   //!
    TBranch        *b_MET_pt;   //!
+   TBranch        *b_nGenPart;   //!                                                                                                                
+   TBranch        *b_GenPart_eta;   //!                                                                                                             
+   TBranch        *b_GenPart_mass;   //!                                                                                                            
+   TBranch        *b_GenPart_phi;   //!                                                                                                             
+   TBranch        *b_GenPart_pt;   //!                                                                                                              
+   TBranch        *b_GenPart_genPartIdxMother;   //!                                                                                                
+   TBranch        *b_GenPart_pdgId;   //!                                                                                                           
+   TBranch        *b_GenPart_status;   //!
    TBranch        *b_Nele;   //!
    TBranch        *b_PT_ele;   //!
    TBranch        *b_Eta_ele;   //!
@@ -347,6 +363,13 @@ inline void KUAnalysis::Init(TTree *tree)
    // (once per file to be processed).
 
    // Set object pointer
+   GenPart_eta = 0;
+   GenPart_mass = 0;
+   GenPart_phi = 0;
+   GenPart_pt = 0;
+   GenPart_genPartIdxMother = 0;
+   GenPart_pdgId = 0;
+   GenPart_status = 0;
    PT_ele = 0;
    Eta_ele = 0;
    Phi_ele = 0;
@@ -488,6 +511,14 @@ inline void KUAnalysis::Init(TTree *tree)
 
    fChain->SetBranchAddress("weight", &weight, &b_weight);
    fChain->SetBranchAddress("MET_pt", &MET_pt, &b_MET_pt);
+   fChain->SetBranchAddress("nGenPart", &nGenPart, &b_nGenPart);
+   fChain->SetBranchAddress("GenPart_eta", &GenPart_eta, &b_GenPart_eta);
+   fChain->SetBranchAddress("GenPart_mass", &GenPart_mass, &b_GenPart_mass);
+   fChain->SetBranchAddress("GenPart_phi", &GenPart_phi, &b_GenPart_phi);
+   fChain->SetBranchAddress("GenPart_pt", &GenPart_pt, &b_GenPart_pt);
+   fChain->SetBranchAddress("GenPart_genPartIdxMother", &GenPart_genPartIdxMother, &b_GenPart_genPartIdxMother);
+   fChain->SetBranchAddress("GenPart_pdgId", &GenPart_pdgId, &b_GenPart_pdgId);
+   fChain->SetBranchAddress("GenPart_status", &GenPart_status, &b_GenPart_status);
    fChain->SetBranchAddress("Nele", &Nele, &b_Nele);
    fChain->SetBranchAddress("PT_ele", &PT_ele, &b_PT_ele);
    fChain->SetBranchAddress("Eta_ele", &Eta_ele, &b_Eta_ele);
@@ -508,7 +539,7 @@ inline void KUAnalysis::Init(TTree *tree)
    fChain->SetBranchAddress("genPhi_ele", &genPhi_ele, &b_genPhi_ele);
    fChain->SetBranchAddress("genM_ele", &genM_ele, &b_genM_ele);
    fChain->SetBranchAddress("genCharge_ele", &genCharge_ele, &b_genCharge_ele);
-   fChain->SetBranchAddress("genPDGID_ele", &genPDGID_ele, &b_genPDGID_ele);
+   fChain->SetBranchAddress("Electron_genPartIdx", &genPDGID_ele, &b_genPDGID_ele);
    fChain->SetBranchAddress("genMomPDGID_ele", &genMomPDGID_ele, &b_genMomPDGID_ele);
    fChain->SetBranchAddress("genIndex_ele", &genIndex_ele, &b_genIndex_ele);
    fChain->SetBranchAddress("Nmu", &Nmu, &b_Nmu);
@@ -629,6 +660,14 @@ inline void KUAnalysis::Init(TTree *tree)
    fChain->SetBranchStatus("*",0);
    fChain->SetBranchStatus("weight",1);
    fChain->SetBranchStatus("MET_pt",1);
+   fChain->SetBranchStatus("nGenPart",1);
+   fChain->SetBranchStatus("GenPart_eta",1);
+   fChain->SetBranchStatus("GenPart_mass",1);
+   fChain->SetBranchStatus("GenPart_phi",1);
+   fChain->SetBranchStatus("GenPart_pt",1);
+   fChain->SetBranchStatus("GenPart_genPartIdxMother",1);
+   fChain->SetBranchStatus("GenPart_pdgId",1);
+   fChain->SetBranchStatus("GenPart_status",1);
    fChain->SetBranchStatus("Nele",1);
    fChain->SetBranchStatus("PT_ele",1);
    fChain->SetBranchStatus("Eta_ele",1);
@@ -653,6 +692,7 @@ inline void KUAnalysis::Init(TTree *tree)
    fChain->SetBranchStatus("Electron_dxy",1);
    fChain->SetBranchStatus("Electron_dz",1);
    fChain->SetBranchStatus("genNele",1);
+   fChain->SetBranchStatus("genPDGID_ele",1);
    fChain->SetBranchStatus("genMomPDGID_ele",1);
    fChain->SetBranchStatus("genPT_ele",1);
    fChain->SetBranchStatus("genEta_ele",1);
@@ -678,6 +718,7 @@ inline void KUAnalysis::Init(TTree *tree)
    fChain->SetBranchStatus("Muon_dxy",1);
    fChain->SetBranchStatus("Muon_dz",1);
    fChain->SetBranchStatus("genNmu",1);
+   fChain->SetBranchStatus("genPDGID_mu",1);
    fChain->SetBranchStatus("genMomPDGID_mu",1);
    fChain->SetBranchStatus("genPT_mu",1);
    fChain->SetBranchStatus("genEta_mu",1);

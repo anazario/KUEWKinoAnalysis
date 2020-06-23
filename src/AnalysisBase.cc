@@ -1072,7 +1072,7 @@ ParticleList AnalysisBase<SUSYNANOBase>::GetElectrons(){
 	  } else if(fabs(lep.Eta()) < 1.479){ // eta < 1.479
 	    if(lep.Pt() < 10.){ // using VLoose ID for low pT
 	      if(mva > 0.373)
-		lep.SetParticleID(kLoose);
+		lep.SetParticleID(kTight);
 	    } else if(lep.Pt() < 40.) {
 	      if(mva > 2.522 + 0.058*(lep.Pt() - 25.))
 		lep.SetParticleID(kTight);

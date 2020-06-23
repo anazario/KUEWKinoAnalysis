@@ -13,7 +13,6 @@ parser.add_option("-o", "--opath", dest="output", default=".",
 parser.add_option("-v", "--ver", dest="version", default='v5',
                   help="Specify version of files in the dasgo client.", metavar="VER")
 
-
 (options, args) = parser.parse_args()
 
 directory = options.directory

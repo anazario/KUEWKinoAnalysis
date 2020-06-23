@@ -24,6 +24,7 @@ private:
 
   // common variables for output tree
   double m_weight;
+  double m_met;
   
   int m_Nele;
   
@@ -184,6 +185,16 @@ private:
   vector<bool>    m_Muon_tightId;
   vector<char>    m_Muon_tkIsoId;
   vector<bool>    m_Muon_triggerIdLoose;
+
+  //nanoSUSY gen particles
+  int             m_nGenPart;
+  vector<float>   m_GenPart_eta;
+  vector<float>   m_GenPart_mass;
+  vector<float>   m_GenPart_phi;
+  vector<float>   m_GenPart_pt;
+  vector<int>     m_GenPart_genPartIdxMother;
+  vector<int>     m_GenPart_pdgId;
+  vector<int>     m_GenPart_status;
 
 };
 
